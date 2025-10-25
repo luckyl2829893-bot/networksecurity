@@ -4,6 +4,6 @@ pymongo
 numpy
 certifi
 fastapi
-
+pymongo[srv]==3.12
 
 #-e .
