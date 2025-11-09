@@ -11,7 +11,6 @@ permissions:
   id-token: write
   contents: read
 
-
 jobs:
   integration:
     name: Continuous Integration
@@ -38,6 +37,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y jq unzip
+      
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -56,12 +56,12 @@ jobs:
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
           IMAGE_TAG: latest
         run: |
-          # Build a docker container and
-          # push it to ECR so that it can
-          # be deployed to ECS.
+          # Build a docker container
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          # Push it to ECR
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          # Use GitHub Environment File for output (Fixes deprecated ::set-output)
+          echo "IMAGE_URL=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_ENV
 
   Continuous-Deployment:
     needs: build-and-push-ecr-image
@@ -78,21 +78,27 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Login to Amazon ECR
-        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
       
-      
-      - name: Pull latest images
+      # Stop and remove the old container if it is running to prevent port conflicts
+      - name: Stop and remove container if running
         run: |
-         docker pull ${{secrets.AWS_ECR_LOGIN_URI}}/${{ secrets.ECR_REPOSITORY_NAME }}:latest
-         
-      #- name: Stop and remove  container if running
-       # run: |
-        # docker ps -q --filter "name=networksecurity" | grep -q . && docker stop networksecurity && docker rm -fv networksecurity
-       
+          CONTAINER_NAME="networksecurity"
+          if docker ps -a --format '{{.Names}}' | grep -q $CONTAINER_NAME; then
+            docker stop $CONTAINER_NAME
+            docker rm -fv $CONTAINER_NAME
+            echo "Stopped and removed old container: $CONTAINER_NAME"
+          else
+            echo "No existing container named $CONTAINER_NAME found."
+          fi
+      
+      # Pull and run the latest image from ECR
       - name: Run Docker Image to serve users
         run: |
-         docker run -d -p 8080:8080 --ipc="host" --name=networksecurity -e 'AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}' -e 'AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY_ID }}' -e 'AWS_REGION=${{ secrets.AWS_REGION }}'  ${{secrets.AWS_ECR_LOGIN_URI}}/${{ secrets.ECR_REPOSITORY_NAME }}:latest
+          # FIX APPLIED: Mapping EC2 host port 8080 to container application port 80.
+          docker run -d -p 8080:80 --ipc="host" --name=networksecurity -e 'AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}' -e 'AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY_ID }}' -e 'AWS_REGION=${{ secrets.AWS_REGION }}' ${{ env.IMAGE_URL }}
+      
       - name: Clean previous images and containers
         run: |
-         docker system prune -f
+          # This cleans up old images/containers that aren't currently running
+          docker system prune -f
