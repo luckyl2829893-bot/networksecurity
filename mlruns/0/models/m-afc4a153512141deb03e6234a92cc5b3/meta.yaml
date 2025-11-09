@@ -1,0 +1,10 @@
+artifact_location: file:///C:/Users/laksh/Desktop/network security project/mlruns/0/models/m-afc4a153512141deb03e6234a92cc5b3/artifacts
+creation_timestamp: 1761722614971
+experiment_id: '0'
+last_updated_timestamp: 1761722621892
+model_id: m-afc4a153512141deb03e6234a92cc5b3
+model_type: null
+name: model_artifact
+source_run_id: 980edfdd94f643fcb95dc5e7b53fb1fa
+status: 2
+status_message: null
