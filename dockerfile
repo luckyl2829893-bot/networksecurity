@@ -15,6 +15,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application files after dependencies are installed
 COPY . /app
 
+# Set PYTHONPATH so Python finds your modules:
+ENV PYTHONPATH=/app
+
 # 2. Set environment variable to prevent interactive prompts during apt install
 ENV DEBIAN_FRONTEND=noninteractive
 
