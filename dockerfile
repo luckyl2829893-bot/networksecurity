@@ -4,22 +4,27 @@ FROM python:3.10-slim-buster
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy all local files into the container's /app directory
-COPY . /app
+# Copy the requirements file first to take advantage of Docker layer caching.
+# If requirements.txt doesn't change, this layer and subsequent layers don't rebuild.
+COPY requirements.txt /app/
 
-# 1. Set environment variable to prevent interactive prompts during apt install
-ENV DEBIAN_FRONTEND=noninteractive
-
-# 2. Install awscli: Run apt update and install in a single layer.
-# We also clean the cache to keep the image size small.
-RUN rm -rf /var/lib/apt/lists/* \
-    && apt update -y \
-    && apt install -y awscli \
-    && apt clean
-
-# 3. Install Python dependencies using pip
+# 1. Install Python dependencies using pip
 # Use 'pip install' on its own line to create an efficient layer
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the application files after dependencies are installed
+COPY . /app
+
+# 2. Set environment variable to prevent interactive prompts during apt install
+ENV DEBIAN_FRONTEND=noninteractive
+
+# 3. Install awscli and clean up cache in a single, robust layer.
+# This pattern ensures the update, install, and cleanup are atomic.
+RUN apt-get update -y \
+    && apt-get install -y awscli \
+    # Remove the list files to minimize the final image size
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
 # Command to run the application when the container starts
 CMD ["python3", "app.py"]
