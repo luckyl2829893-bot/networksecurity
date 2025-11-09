@@ -12,8 +12,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # 2. Install awscli: Run apt update and install in a single layer.
 # We also clean the cache to keep the image size small.
-RUN apt update -y \
-    && apt install awscli -y \
+RUN rm -rf /var/lib/apt/lists/* \
+    && apt update -y \
+    && apt install -y awscli \
     && apt clean
 
 # 3. Install Python dependencies using pip
