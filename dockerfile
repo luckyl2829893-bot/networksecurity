@@ -1,5 +1,5 @@
 # Start from a slim Python 3.10 image based on Debian Buster
-FROM python:3.10-slim-buster
+FROM python:3.10-slim-bullseye
 
 # Set the working directory inside the container
 WORKDIR /app
