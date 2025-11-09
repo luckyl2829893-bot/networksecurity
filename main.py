@@ -8,8 +8,8 @@ from networksecurity.entity.config_entity import TrainingPipelineConfig
 
 from networksecurity.component.model_trainer import ModelTrainer
 from networksecurity.entity.config_entity import ModelTrainerConfig
- 
-
+import mlflow 
+mlflow.set_tracking_uri("file:///C:/Users/laksh/Desktop/network security project/mlruns")
 import sys
 
 if __name__=='__main__':

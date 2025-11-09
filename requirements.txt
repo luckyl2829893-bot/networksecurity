@@ -6,7 +6,7 @@ certifi
 fastapi
 pymongo[srv]==3.12
 scikit-learn
-mlflow
+mlflow==2.11.3
 pyaml
 dagshub
 
@@ -14,4 +14,4 @@ uvicorn
 python-multipart
 
 
-#-e .
+#-e 

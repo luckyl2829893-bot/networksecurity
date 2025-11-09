@@ -34,7 +34,7 @@ class NetworkDataExtract():
         
     def insert_data_mongodb(self,records,database,collection):
         try:
-            self.database=database
+            self.database=database  
             self.collection=collection
             self.records=records
 
