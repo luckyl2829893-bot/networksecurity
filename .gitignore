@@ -3,4 +3,5 @@ venv
 logs/
 mlruns/
 artifacts
-summary.txt
+#summary.txt
+PROJECT_GUIDE.txt
