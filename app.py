@@ -1,44 +1,44 @@
-import sys
 import os
+import sys
+import pandas as pd
 
-import certifi
-ca = certifi.where()
+from fastapi import FastAPI, File, UploadFile, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
+from starlette.responses import RedirectResponse
+import uvicorn
 
-from dotenv import load_dotenv
-load_dotenv()
-mongo_db_url = os.getenv("MONGO_DB_URL")
-print(mongo_db_url)
-import pymongo
 from networksecurity.exception.exception import NetworkSecurityException
 from networksecurity.logging.logger import logging
 from networksecurity.pipeline.training_pipeline import TrainingPipeline
 
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI, File, UploadFile,Request
-from uvicorn import run as app_run
-from fastapi.responses import Response
-from starlette.responses import RedirectResponse
-import pandas as pd
-
-from networksecurity.utils.main_utils.utils import load_object
-
+from fastapi.templating import Jinja2Templates
 from networksecurity.utils.ml_utils.model.estimator import NetworkModel
 from networksecurity.utils.search_utils import identify_input_type, calculate_risk_score, calculate_heuristic_score
+from networksecurity.utils.advanced_analysis import (
+    analyze_form_targets, 
+    get_domain_age_risk,
+    analyze_open_redirects,
+    check_subdomain_takeover
+)
+from networksecurity.utils.ai_agent import get_ai_agent_response
 
 
-client = pymongo.MongoClient(mongo_db_url, tlsCAFile=ca)
-
-from networksecurity.constant.training_pipeline import DATA_INGESTION_COLLECTION_NAME
-from networksecurity.constant.training_pipeline import DATA_INGESTION_DATABASE_NAME
-
-database = client[DATA_INGESTION_DATABASE_NAME]
-collection = database[DATA_INGESTION_COLLECTION_NAME]
-
-# Search Database Connection
-SEARCH_DB_NAME = "PhishingDetectionDB"
-search_db = client[SEARCH_DB_NAME]
+try:
+    from pymongo import MongoClient
+    mongo_db_url = os.getenv("MONGO_DB_URL")
+    if mongo_db_url:
+        client = MongoClient(mongo_db_url)
+        search_db = client["PhishingDetectionDB"]
+    else:
+        search_db = None
+except Exception as e:
+    search_db = None
+    logging.error(f"MongoDB connection failed: {e}")
 
 app = FastAPI()
+templates = Jinja2Templates(directory="templates")
+
 origins = ["*"]
 
 app.add_middleware(
@@ -49,9 +49,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from fastapi.templating import Jinja2Templates
-templates = Jinja2Templates(directory="./templates")
-
 @app.get("/", tags=["authentication"])
 async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
@@ -59,7 +56,7 @@ async def index(request: Request):
 @app.get("/train")
 async def train_route():
     try:
-        train_pipeline=TrainingPipeline()
+        train_pipeline = TrainingPipeline()
         train_pipeline.run_pipeline()
         return Response("Training is successful")
     except Exception as e:
@@ -74,42 +71,66 @@ async def search_route(request: Request, query: str):
         input_type = identify_input_type(query)
         results = {}
         
-        # Query Collections based on input type or check all relevant ones
-        # For simplicity and "Universal Search", we check relevant collections
-        
-        if input_type == "ip":
-            # Check IPs
-            ip_doc = search_db["ips"].find_one({"ip": query})
-            if ip_doc:
-                results["ips"] = ip_doc
-                
-        elif input_type == "domain":
-            # Check Domains
-            domain_doc = search_db["domains"].find_one({"domain": query})
-            if domain_doc:
-                results["domains"] = domain_doc
-                
-        elif input_type == "url":
-            # Check URLs
-            # Exact match for now
-            phishing_doc = search_db["phishing_links"].find_one({"url": query})
-            if phishing_doc:
-                results["phishing_link"] = phishing_doc
-                
-            combined_doc = search_db["combined_urls"].find_one({"url": query})
-            if combined_doc:
-                results["combined_urls"] = combined_doc
+        if search_db:
+            if input_type == "ip":
+                ip_doc = search_db["ips"].find_one({"ip": query})
+                if ip_doc:
+                    results["ips"] = ip_doc
+            elif input_type == "domain":
+                domain_doc = search_db["domains"].find_one({"domain": query})
+                if domain_doc:
+                    results["domains"] = domain_doc
+            elif input_type == "url":
+                phishing_doc = search_db["phishing_links"].find_one({"url": query})
+                if phishing_doc:
+                    results["phishing_link"] = phishing_doc
+                combined_doc = search_db["combined_urls"].find_one({"url": query})
+                if combined_doc:
+                    results["combined_urls"] = combined_doc
+        else:
+             logging.warning("Skipping database search as database client is not initialized.")
 
-        # Calculate Database Risk Score
         db_score = calculate_risk_score(results)
-        
-        # Calculate Heuristic Score (Pattern Matching)
         heuristic_data = calculate_heuristic_score(query, input_type)
         heuristic_score = heuristic_data["score"]
         heuristic_reasons = heuristic_data["reasons"]
+
+        if input_type == "url":
+            form_analysis = analyze_form_targets(query)
+            if form_analysis["detected"]:
+                heuristic_score += 100
+                heuristic_reasons.extend(form_analysis["details"])
         
-        # Total Risk Score
+        domain_str = query
+        if input_type == "url":
+            from urllib.parse import urlparse
+            domain_str = urlparse(query).netloc
+            
+        whois_data = get_domain_age_risk(domain_str)
+        if whois_data["is_new"]:
+            heuristic_score += 50
+            heuristic_reasons.extend(whois_data["details"])
+            
+        redirect_analysis = analyze_open_redirects(query)
+        if redirect_analysis["detected"]:
+            heuristic_score += 40
+            heuristic_reasons.extend(redirect_analysis["details"])
+            
+        subdomain_analysis = check_subdomain_takeover(domain_str)
+        if subdomain_analysis["detected"]:
+            heuristic_score += 70
+            heuristic_reasons.extend(subdomain_analysis["details"])
+        
         total_risk_score = min(db_score + heuristic_score, 100)
+        
+        # AI Agent Report (Grok-style)
+        security_brief = get_ai_agent_response(query, input_type, total_risk_score, heuristic_reasons, results)
+        
+        # UI Confidence Level
+        confidence = 100 - (total_risk_score // 5) if total_risk_score < 50 else 95
+        
+        # Check if real LLM is active
+        llm_mode = bool(os.getenv("XAI_API_KEY") or os.getenv("GROK_API_KEY"))
         
         return templates.TemplateResponse("index.html", {
             "request": request, 
@@ -117,11 +138,13 @@ async def search_route(request: Request, query: str):
             "input_type": input_type,
             "risk_score": total_risk_score,
             "results": results,
-            "heuristic_reasons": heuristic_reasons
+            "heuristic_reasons": heuristic_reasons,
+            "security_brief": security_brief,
+            "confidence": confidence,
+            "llm_mode": llm_mode
         })
 
     except Exception as e:
-        # Log error but return page with error message
         logging.error(f"Search Error: {e}")
         return templates.TemplateResponse("index.html", {"request": request, "error": "An error occurred during search"})
     
@@ -129,26 +152,15 @@ async def search_route(request: Request, query: str):
 async def predict_route(request: Request,file: UploadFile = File(...)):
     try:
         df=pd.read_csv(file.file)
-        #print(df)
-        preprocesor=load_object("final_model/preprocessor.pkl")
-        final_model=load_object("final_model/model.pkl")
-        network_model = NetworkModel(preprocessor=preprocesor,model=final_model)
-        print(df.iloc[0])
+        final_model_dir='final_model'
+        network_model = NetworkModel(model_dir=final_model_dir)
         y_pred = network_model.predict(df)
-        print(y_pred)
         df['predicted_column'] = y_pred
-        print(df['predicted_column'])
-        #df['predicted_column'].replace(-1, 0)
-        #return df.to_json()
-        os.makedirs("prediction_output", exist_ok=True)
-        df.to_csv("prediction_output/output.csv", index=False)
+        df.to_csv('prediction_output/output.csv')
         table_html = df.to_html(classes='table table-striped')
-        #print(table_html)
-        return templates.TemplateResponse("table.html", {"request": request, "table": table_html})
-        
+        return Response(table_html)
     except Exception as e:
-            raise NetworkSecurityException(e,sys)
+        raise NetworkSecurityException(e,sys)
 
-    
-if __name__=="__main__":
-    app_run(app,host="0.0.0.0",port=8000)
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)

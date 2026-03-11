@@ -4,125 +4,381 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Network Security - Universal Search</title>
-    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/2092/2092663.png" type="image/png">
+    <title>NS-Grok | Cyber Phishing Agent</title>
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <!-- Bootstrap 5 Dark -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Marked.js for Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Typed.js -->
+    <script src="https://unpkg.com/typed.js@2.1.0/dist/typed.umd.js"></script>
+
     <style>
+        :root {
+            --bg-color: #0b0e14;
+            --card-bg: rgba(22, 27, 34, 0.7);
+            --accent-primary: #1d9bf0;
+            --accent-success: #00ff88;
+            --accent-warning: #ffd700;
+            --accent-danger: #ff4d4d;
+            --text-main: #e6edf3;
+            --text-muted: #8b949e;
+            --border-color: #30363d;
+        }
+
         body {
-            background-color: #f8f9fa;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Space Grotesk', sans-serif;
+            overflow-x: hidden;
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(29, 155, 240, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 255, 136, 0.05) 0%, transparent 40%);
+            min-height: 100vh;
         }
 
-        .search-container {
-            max-width: 800px;
-            margin: 50px auto;
-            padding: 30px;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        .navbar {
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(13, 17, 23, 0.8);
+            backdrop-filter: blur(10px);
         }
 
-        .risk-score {
-            font-size: 3rem;
-            font-weight: bold;
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease, border-color 0.3s ease;
         }
 
-        .risk-low {
-            color: #28a745;
+        .glass-card:hover {
+            border-color: var(--accent-primary);
         }
 
-        .risk-medium {
-            color: #ffc107;
+        .search-area {
+            max-width: 900px;
+            margin: 60px auto;
         }
 
-        .risk-high {
-            color: #dc3545;
+        .search-input {
+            background: rgba(13, 17, 23, 0.9);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
         }
 
-        .result-card {
-            margin-top: 20px;
+        .search-input:focus {
+            background: #161b22;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 4px rgba(29, 155, 240, 0.15);
+            color: white;
+        }
+
+        .btn-grok {
+            background: var(--accent-primary);
             border: none;
-            background: #f1f3f5;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-grok:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(29, 155, 240, 0.3);
+            background: #1a8cd8;
+        }
+
+        .risk-gauge-container {
+            position: relative;
+            height: 120px;
+            width: 120px;
+            margin: 0 auto;
+        }
+
+        .risk-gauge-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.8rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .ai-briefing-box {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border-left: 4px solid var(--accent-primary);
+            font-size: 1.05rem;
+            line-height: 1.6;
+        }
+
+        .ai-briefing-box * {
+            margin-bottom: 0.5rem;
+        }
+
+        .danger-border {
+            border-left-color: var(--accent-danger) !important;
+        }
+
+        .warning-border {
+            border-left-color: var(--accent-warning) !important;
+        }
+
+        .success-border {
+            border-left-color: var(--accent-success) !important;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .marker-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            border: 1px solid transparent;
+        }
+
+        #ai-cursor {
+            display: inline-block;
+            width: 10px;
+            height: 1.2rem;
+            background-color: var(--accent-primary);
+            margin-left: 5px;
+            animation: blink 1s infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
+
+        pre {
+            background: #161b22;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-success);
+        }
+
+        .grok-logo {
+            font-weight: 800;
+            letter-spacing: -1px;
+            font-size: 1.5rem;
+            color: white;
+            text-decoration: none;
+        }
+
+        .grok-logo span {
+            color: var(--accent-primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .search-area {
+                margin: 30px 15px;
+            }
+
+            .glass-card {
+                padding: 1.2rem;
+            }
         }
     </style>
 </head>
 
 <body>
 
-    <div class="container">
-        <div class="search-container text-center">
-            <h1 class="mb-4">🛡️ Network Security Intelligence</h1>
-            <p class="text-muted mb-4">Search for IPs, Domains, or URLs to assess phishing risk.</p>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="grok-logo" href="/">NS-<span>GROK</span></a>
+            <div class="ms-auto d-flex gap-3">
+                <a href="/train" class="nav-link small text-muted">Train Pipeline</a>
+                <a href="/docs" class="nav-link small text-muted">Core API</a>
+            </div>
+        </div>
+    </nav>
 
-            <form action="/search" method="get" class="d-flex gap-2 mb-5">
-                <input type="text" name="query" class="form-control form-control-lg"
-                    placeholder="Enter IP, Domain, or URL..." value="{{ query if query else '' }}" required>
-                <button type="submit" class="btn btn-primary btn-lg">Search</button>
-            </form>
+    <div class="container search-area">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold">Security Agent Alpha</h2>
+            <p class="text-muted">Enter a URL, Domain, or IP address for real-time threat intelligence.</p>
+        </div>
 
-            {% if error %}
-            <div class="alert alert-danger">{{ error }}</div>
-            {% endif %}
+        <form action="/search" method="get" class="d-flex gap-3 mb-5">
+            <input type="text" name="query" class="form-control search-input" placeholder="e.g., target-brand-login.com"
+                value="{{ query if query else '' }}" required autocomplete="off">
+            <button type="submit" class="btn btn-grok">
+                <i data-lucide="search" class="me-2" style="width: 18px;"></i>
+                Intelligence Scan
+            </button>
+        </form>
 
-            {% if query %}
-            <div class="results-section">
-                <hr>
-                <div class="row align-items-center mt-4">
-                    <div class="col-md-4">
-                        <h5>Risk Score</h5>
-                        <div
-                            class="risk-score {% if risk_score < 30 %}risk-low{% elif risk_score < 70 %}risk-medium{% else %}risk-high{% endif %}">
-                            {{ risk_score }}/100
-                        </div>
-                        <span
-                            class="badge {% if risk_score < 30 %}bg-success{% elif risk_score < 70 %}bg-warning{% else %}bg-danger{% endif %}">
-                            {% if risk_score < 30 %}Safe{% elif risk_score < 70 %}Suspicious{% else %}High Risk{% endif
-                                %} </span>
+        {% if error %}
+        <div class="alert alert-danger glass-card border-danger text-center">{{ error }}</div>
+        {% endif %}
+
+        {% if query %}
+        <div class="row g-4">
+            <!-- Left Panel: AI Briefing -->
+            <div class="col-lg-8">
+                <div class="glass-card h-100">
+                    <div class="d-flex align-items-center mb-4">
+                        <i data-lucide="bot" class="text-primary me-2"></i>
+                        <h5 class="mb-0">Cyber Agent Briefing</h5>
+                        {% if llm_mode %}
+                        <span class="badge rounded-pill bg-success ms-auto small"
+                            style="font-size: 0.6rem; letter-spacing: 1px;">
+                            <span class="spinner-grow spinner-grow-sm me-1" role="status"></span>
+                            LIVE NEURAL LINK
+                        </span>
+                        {% endif %}
                     </div>
-                    <div class="col-md-8 text-start">
-                        <h5>Analysis Details</h5>
-                        <p><strong>Input Type:</strong> {{ input_type|upper }}</p>
+
+                    <div
+                        class="ai-briefing-box {% if risk_score > 70 %}danger-border{% elif risk_score > 30 %}warning-border{% else %}success-border{% endif %}">
+                        <div id="ai-response-container">
+                            <div id="ai-response-content"></div>
+                            <span id="ai-cursor"></span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-top border-secondary">
+                        <div class="d-flex gap-3">
+                            <div class="text-center bg-dark p-2 rounded" style="flex: 1;">
+                                <div class="stat-label">Scan Confidence</div>
+                                <div class="fw-bold text-success">{{ confidence }}%</div>
+                            </div>
+                            <div class="text-center bg-dark p-2 rounded" style="flex: 1;">
+                                <div class="stat-label">Model Engine</div>
+                                <div class="fw-bold">RandomForest-v1.1</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Data Indicators -->
+            <div class="col-lg-4">
+                <div class="glass-card mb-4 text-center">
+                    <h6 class="stat-label mb-3">Threat Probability</h6>
+                    <div class="risk-gauge-container">
+                        <svg viewBox="0 0 36 36" style="width: 100%; height: 100%;">
+                            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                fill="none" stroke="#222" stroke-width="3" />
+                            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                fill="none"
+                                stroke="{% if risk_score > 70 %}#ff4d4d{% elif risk_score > 30 %}#ffd700{% else %}#00ff88{% endif %}"
+                                stroke-width="3" stroke-dasharray="{{ risk_score }}, 100" />
+                        </svg>
+                        <div
+                            class="risk-gauge-value {% if risk_score > 70 %}text-danger{% elif risk_score > 30 %}text-warning{% else %}text-success{% endif %}">
+                            {{ risk_score }}
+                        </div>
+                    </div>
+                    <div class="mt-2 fw-bold text-uppercase small" style="letter-spacing: 2px;">
+                        {% if risk_score < 30 %}Level: Alpha (Safe){% elif risk_score < 70 %}Level: Beta (Suspicious){%
+                            else %}Level: Omega (Hazard){% endif %} </div>
+                    </div>
+
+                    <div class="glass-card">
+                        <div class="d-flex align-items-center mb-3">
+                            <i data-lucide="database" class="text-muted me-2" style="width: 18px;"></i>
+                            <h6 class="mb-0 small fw-bold">RAW INDICATORS</h6>
+                        </div>
+
+                        <div class="small mb-3">
+                            <span class="stat-label">Target ID:</span>
+                            <div class="text-info font-monospace">{{ query }}</div>
+                        </div>
 
                         {% if results %}
-                        <ul class="list-group">
+                        <div class="mb-4">
+                            <div class="stat-label mb-2">DB Matches</div>
                             {% for source, data in results.items() %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                Found in <strong>{{ source }}</strong>
-                                <span class="badge bg-danger rounded-pill">Detected</span>
-                            </li>
+                            <div class="marker-item border-danger d-flex justify-content-between align-items-center">
+                                <span class="small">{{ source }}</span>
+                                <span class="badge bg-danger">FLAGGED</span>
+                            </div>
                             {% endfor %}
-                        </ul>
-                        {% endif %}
-
-                        {% if heuristic_reasons %}
-                        <div class="mt-3">
-                            <h6>⚠️ Suspicious Patterns Detected:</h6>
-                            <ul class="list-group">
-                                {% for reason in heuristic_reasons %}
-                                <li class="list-group-item list-group-item-warning small py-1">
-                                    {{ reason }}
-                                </li>
-                                {% endfor %}
-                            </ul>
                         </div>
                         {% endif %}
 
-                        {% if not results and not heuristic_reasons %}
-                        <div class="alert alert-success mb-0">
-                            No threats detected in our database or via pattern analysis.
+                        <div>
+                            <div class="stat-label mb-2">Heuristic Heuristics</div>
+                            {% for reason in heuristic_reasons %}
+                            <div class="marker-item small">
+                                <i data-lucide="alert-triangle" class="text-warning me-2" style="width: 14px;"></i>
+                                {{ reason }}
+                            </div>
+                            {% endfor %}
+
+                            {% if not results and not heuristic_reasons %}
+                            <div class="text-success small">
+                                <i data-lucide="shield-check" class="me-2" style="width: 14px;"></i>
+                                No anomalous markers found.
+                            </div>
+                            {% endif %}
                         </div>
-                        {% endif %}
                     </div>
                 </div>
             </div>
             {% endif %}
-
-            <div class="mt-5 pt-3 border-top">
-                <a href="/docs" class="btn btn-outline-secondary btn-sm">API Docs</a>
-                <a href="/train" class="btn btn-outline-secondary btn-sm">Train Model</a>
-            </div>
         </div>
-    </div>
 
+        <footer class="text-center py-5 mt-5">
+            <p class="text-muted small">Powered by NS-Grok Engine | Advanced Research Portfolio 2026</p>
+        </footer>
+
+        <script>
+            // Init Icons
+            lucide.createIcons();
+
+            {% if query %}
+            // AI Agent Animated Response
+            // Use JSON safe stringification to prevent breaking backticks
+            const rawContent = {{ security_brief | tojson | safe }};
+            const outputDiv = document.getElementById('ai-response-content');
+            const cursor = document.getElementById('ai-cursor');
+
+            const typed = new Typed(outputDiv, {
+                strings: [marked.parse(rawContent)],
+                typeSpeed: 15,
+                showCursor: false,
+                onComplete: (self) => {
+                    cursor.style.display = 'none';
+                }
+            });
+            {% endif %}
+        </script>
 </body>
 
 </html>

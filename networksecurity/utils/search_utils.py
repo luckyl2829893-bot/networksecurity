@@ -22,31 +22,68 @@ def identify_input_type(input_str: str) -> str:
 def calculate_risk_score(results: dict) -> int:
     """
     Calculates a risk score (0-100) based on search results.
+    Only adds score if the found record is actually malicious.
     """
     score = 0
     
     # Weights
+    # If found in our malicious database, it is High Risk.
     WEIGHTS = {
-        "phishing_link": 50,
-        "combined_urls": 50,
-        "domains": 30,
-        "ips": 20
+        "phishing_link": 100,
+        "combined_urls": 100,
+        "domains": 100,
+        "ips": 100
     }
     
-    if results.get("phishing_link"):
+    # Helper to check if a document is malicious
+    def is_malicious(doc):
+        if not doc: return False
+        # Check 'result' (1 = bad, 0 = good)
+        if "result" in doc:
+            return str(doc["result"]) == "1"
+        # Check 'label' (bad/good)
+        if "label" in doc:
+            return str(doc["label"]).lower() == "bad"
+        # Default to True if it's in a specific blacklist collection without labels
+        return True
+
+    if is_malicious(results.get("phishing_link")):
         score += WEIGHTS["phishing_link"]
         
-    if results.get("combined_urls"):
+    if is_malicious(results.get("combined_urls")):
         score += WEIGHTS["combined_urls"]
         
-    if results.get("domains"):
+    if is_malicious(results.get("domains")):
         score += WEIGHTS["domains"]
         
-    if results.get("ips"):
+    if is_malicious(results.get("ips")):
         score += WEIGHTS["ips"]
         
     # Cap score at 100
     return min(score, 100)
+
+def is_homograph_attack(input_str: str) -> bool:
+    """
+    Detects if a URL/Domain is a homograph attack by checking for Punycode encoding
+    or non-ASCII characters that might be spoofing legitimate characters.
+    """
+    input_lower = input_str.lower()
+    
+    # 1. Check for Punycode prefix directly (Universal standard for homograph URLs)
+    if "xn--" in input_lower:
+        return True
+        
+    # 2. Extract domain part to check for non-ASCII
+    # Homographs are most dangerous in the domain name.
+    clean_domain = input_lower.replace("http://", "").replace("https://", "").replace("www.", "").split("/")[0]
+    
+    # 3. Check for non-ASCII characters in the domain.
+    # If the domain contains non-ASCII characters (like Cyrillic 'а'), 
+    # it is a high-risk indicator of a homograph attack.
+    if any(ord(char) > 127 for char in clean_domain):
+        return True
+        
+    return False
 
 def calculate_heuristic_score(input_str: str, input_type: str) -> dict:
     """
@@ -62,7 +99,8 @@ def calculate_heuristic_score(input_str: str, input_type: str) -> dict:
     SUSPICIOUS_KEYWORDS = [
         "login", "signin", "verify", "update", "secure", "account", 
         "banking", "paypal", "amazon", "apple", "google", "microsoft",
-        "confirm", "wallet", "crypto", "free", "bonus"
+        "confirm", "wallet", "crypto", "free", "bonus", "alert", "support",
+        "service", "auth", "security"
     ]
     
     found_keywords = [kw for kw in SUSPICIOUS_KEYWORDS if kw in input_lower]
@@ -96,12 +134,39 @@ def calculate_heuristic_score(input_str: str, input_type: str) -> dict:
                 details.append("URL uses IP address instead of domain (+25)")
         except:
             pass
+            
+        # Check for URL Chaining / Open Redirects (Multiple schemes)
+        # e.g. http://legit.com//http://evil.com
+        scheme_count = input_lower.count("http") + input_lower.count("https") + input_lower.count("www.")
+        # Note: A normal URL has 1 scheme (http or https). If we see more, it's suspicious.
+        # We count 'http' which is inside 'https', so 'https://' counts as 1 http and 1 https? 
+        # Simpler: count "://"
+        slash_slash_count = input_lower.count("://")
+        if slash_slash_count > 1:
+             heuristic_score += 40
+             details.append("Multiple URL schemes detected (Potential Open Redirect) (+40)")
+             
+        # Check for '@' symbol (Obfuscation)
+        if "@" in input_str:
+            heuristic_score += 30
+            details.append("URL contains '@' symbol (Potential Obfuscation) (+30)")
 
     # 5. Typosquatting / Brand Imitation
-    TARGET_BRANDS = [
-        "paypal", "google", "facebook", "amazon", "apple", "microsoft", 
-        "netflix", "instagram", "whatsapp", "twitter", "linkedin"
-    ]
+    TARGET_BRANDS = {
+        "paypal": "paypal.com",
+        "google": "google.com",
+        "facebook": "facebook.com",
+        "amazon": "amazon.com",
+        "apple": "apple.com",
+        "microsoft": "microsoft.com",
+        "netflix": "netflix.com",
+        "instagram": "instagram.com",
+        "whatsapp": "whatsapp.com",
+        "twitter": "twitter.com",
+        "linkedin": "linkedin.com",
+        "chase": "chase.com",
+        "wellsfargo": "wellsfargo.com"
+    }
     
     from difflib import SequenceMatcher
     
@@ -112,39 +177,36 @@ def calculate_heuristic_score(input_str: str, input_type: str) -> dict:
     if "/" in clean_input:
         clean_input = clean_input.split("/")[0]
         
-    # Check for "Brand Split" (e.g., ama.zon)
-    # We remove all dots and see if it equals a brand
-    no_dot_input = clean_input.replace(".", "")
-    for brand in TARGET_BRANDS:
-        if brand in no_dot_input:
-            # But we must ensure it's not the actual brand domain (e.g. amazon.com -> amazoncom contains amazon)
-            # If the original input had a dot inside the brand part, it's suspicious.
-            # e.g. ama.zon.com -> amazoncom. Brand is amazon. 
-            # We check if the brand appears in the cleaned string BUT was separated in the original.
-            
-            # Simple check: if the brand is present in the "no dot" version, 
-            # but the "dot" version doesn't contain the brand as a whole word.
-            if brand not in clean_input:
-                 heuristic_score += 50
-                 details.append(f"Suspicious dot placement detected (Targeting '{brand}') (+50)")
-                 break
+    # Check for Brand Impersonation (Brand name in domain but NOT official domain)
+    for brand, official_domain in TARGET_BRANDS.items():
+        if brand in clean_input:
+            # Check if it is the official domain or a subdomain of it
+            if not (clean_input == official_domain or clean_input.endswith("." + official_domain)):
+                heuristic_score += 60
+                details.append(f"Brand '{brand}' detected in unofficial domain '{clean_input}' (+60)")
+                break # Stop after finding one impersonation
 
-    # Fuzzy Matching on Domain Parts
+    # Fuzzy Matching on Domain Parts (Typosquatting)
     parts = clean_input.split(".")
     
     # Check each part (subdomain/domain) against brands
     for part in parts:
         if len(part) < 3: continue # Skip short parts
         
-        for brand in TARGET_BRANDS:
+        for brand in TARGET_BRANDS.keys():
             if part == brand:
-                continue # Exact match of a part might be okay (e.g. google.com) or handled elsewhere
+                continue # Exact match handled above
                 
             similarity = SequenceMatcher(None, part, brand).ratio()
             if 0.8 <= similarity < 1.0:
                 heuristic_score += 40
                 details.append(f"Potential typosquatting in subdomain '{part}' (Simulates '{brand}') (+40)")
                 break 
+
+    # 6. Homograph / Punycode Attack Detection
+    if is_homograph_attack(input_str):
+        heuristic_score += 90
+        details.append("Homograph Attack detected: URL uses non-standard characters to spoof a domain (+90)")
 
     return {"score": heuristic_score, "reasons": details}
 

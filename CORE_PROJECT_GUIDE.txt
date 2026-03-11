@@ -1,0 +1,77 @@
+================================================================================
+🛡️ CORE PROJECT GUIDE: NETWORK SECURITY PHISHING DETECTION (ORIGINAL SYSTEM)
+================================================================================
+
+1. THE CORE IDEA OF THIS PROJECT
+--------------------------------
+The primary objective of this project is to build an automated, end-to-end Machine 
+Learning pipeline to detect phishing websites in a network environment.
+Unlike simple rule-based filters, this system uses statistical patterns from 
+thousands of URLs to "learn" what a malicious link looks like.
+
+2. THE "BRAIN": MACHINE LEARNING LIFECYCLE
+------------------------------------------
+The project follows the standard MLOps (Machine Learning Operations) structure 
+to ensure the model is always accurate and updated.
+
+A. DATA INGESTION (Getting the Data)
+- Where: `networksecurity/component/data_ingestion.py`
+- Source: The project connects to a MongoDB database (Atlas) to pull raw 
+  phishing/network data records.
+- Action: It converts the database records into a local `.csv` file. It then 
+  splits the data into "Training" (used to learn) and "Testing" (used to verify).
+
+B. DATA VALIDATION (Checking the Quality)
+- Where: `networksecurity/component/data_validation.py`
+- Action: Before training, the system checks if the data has the correct number 
+  of columns and if the files exist. If the data "drift" (changes significantly), 
+  it creates a report.
+
+C. DATA TRANSFORMATION (Feature Engineering)
+- Where: `networksecurity/component/data_transformation.py`
+- The Core Secret: Computers don't understand words; they understand numbers.
+- Tools Used:
+    - KNN Imputer: If some data points are missing, it looks at the "Nearest 
+      Neighbors" to guess the missing value correctly.
+    - Feature Mapping: It converts URL patterns (like length, symbols, presence 
+      of '@') into mathematical features.
+
+D. MODEL TRAINER (Training the Brain)
+- Where: `networksecurity/component/model_trainer.py`
+- Algorithm: Random Forest Classifier.
+- Action: It trains multiple decision trees and takes their combined vote to 
+  decide if a URL is "Phishing" or "Safe."
+- Saving: The best model is saved as a `.pkl` file in the `final_model/` folder.
+
+3. THE INFRASTRUCTURE (How it Runs)
+-----------------------------------
+- FastAPI: This is the web engine. It provides two main routes:
+    - `/train`: Triggers the entire pipeline (Ingestion -> Trainer).
+    - `/predict`: Allows a user to upload a CSV file and get real-time 
+      predictions on whether the links in that file are malicious.
+- MongoDB Atlas: Stores the "Live" data and blacklists.
+- AWS S3 Integration: Automatically syncs your trained models and data 
+  artifacts to the cloud for backup and deployment.
+
+4. CORE DIRECTORY EXPLANATION
+-----------------------------
+- `/networksecurity/pipeline/`: Contains `training_pipeline.py`. This is the 
+  "Conductor" that tells all other components when to work.
+- `/networksecurity/constant/`: Stores the global settings (e.g., Database Name, 
+  Collection Name, Training parameters).
+- `/app.py`: The entry point for the web dashboard.
+
+5. WHY THIS IS A HIGH-LEVEL PROJECT?
+------------------------------------
+1. Automated Pipeline: It is not a "one-time" script. It can retrain itself 
+   automatically.
+2. Real-time Integration: It connects to live databases and cloud storage.
+3. Industry Standard: It follows the exact modular pattern used in top tech 
+   companies (Ingestion -> Transformation -> Model Trainer).
+
+---
+This guide focuses on the ORIGINAL CORE of the project before any advanced 
+feature additions. Understanding this "Machine Learning Pipeline" is essential 
+as it represents the foundation of the entire system.
+================================================================================
+End of Core Project Guide

@@ -1,7 +1,12 @@
-venv
+.nsvenv
+nsvenv/
 .env
 logs/
 mlruns/
-artifacts
-#summary.txt
-PROJECT_GUIDE.txt
+__pycache__/
+*.pyc
+.vscode/
+.ipynb_checkpoints/
+Artifacts/
+prediction_output/
+valid_data/
