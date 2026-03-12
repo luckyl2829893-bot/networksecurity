@@ -16,12 +16,12 @@ class PhishingAIAgent:
         
         # Automatic Provider Detection
         if self.api_key and self.api_key.startswith("AIza"):
-            # Use Gemini's OpenAI-compatible base endpoint
-            self.api_url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
-            # Standard model path for this endpoint
-            self.model = "gemini-1.5-flash"
+            # Use Native Gemini Endpoint (Safest for Auth)
+            self.api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={self.api_key}"
+            self.provider = "gemini"
         else:
             self.api_url = "https://api.x.ai/v1/chat/completions"
+            self.provider = "openai"
             self.model = "grok-2"
 
     def _get_intro(self, risk_score):
@@ -72,27 +72,37 @@ class PhishingAIAgent:
         """
 
         try:
-            headers = {
-                "Content-Type": "application/json"
-            }
-            # Standard OpenAI-style header for all providers (including Gemini)
-            headers["Authorization"] = f"Bearer {self.api_key}"
-            data = {
-                "model": self.model, 
-                "messages": [
-                    {"role": "system", "content": "You are a world-class cybersecurity AI agent named Safe-Surf."},
-                    {"role": "user", "content": prompt}
-                ],
-                "stream": False
-            }
+            if self.provider == "gemini":
+                # Native Gemini Format
+                headers = {"Content-Type": "application/json"}
+                data = {
+                    "contents": [{"parts": [{"text": prompt}]}]
+                }
+            else:
+                # Standard OpenAI/Grok Format
+                headers = {
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {self.api_key}"
+                }
+                data = {
+                    "model": self.model,
+                    "messages": [
+                        {"role": "system", "content": "You are a world-class cybersecurity AI agent named Safe-Surf."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    "stream": False
+                }
             
             response = requests.post(self.api_url, headers=headers, json=data, timeout=12)
             if response.status_code == 200:
                 result = response.json()
-                return result['choices'][0]['message']['content']
+                if self.provider == "gemini":
+                    return result['candidates'][0]['content']['parts'][0]['text']
+                else:
+                    return result['choices'][0]['message']['content']
             else:
-                err_msg = response.text[:100] # Get a snippet of the error
-                return f"⚠️ [Agent Connection: {response.status_code}] {err_msg}...\n\n" + \
+                err_msg = response.text[:150] # Detailed error log
+                return f"⚠️ [Safe-Surf Node: {response.status_code}] {err_msg}...\n\n" + \
                        self._generate_simulated_analysis(query, input_type, risk_score, heuristic_reasons, db_results)
                 
         except Exception as e:
