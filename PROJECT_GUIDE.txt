@@ -101,14 +101,14 @@ LAYER 3: DYNAMIC RESEARCH SCANNERS (The Investigator)
    - Behavioral Auditor: Scans for suspicious script origins (JS).
 
 ================================================================================
-3. AI AGENT REASONING ENGINE (SAFE-SURF)
+3. AI AGENT REASONING ENGINE (v3.2)
 ================================================================================
 
 Developed to provide "Explainable AI" (XAI) security findings:
-- Personality: A sharp, technical Cybersecurity Analyst.
-- Goal: To tell the user exactly "Why" a target is dangerous.
-- LLM Integration: Fully compatible with Real Grok (xAI) or OpenAI APIs.
-- Fallback Intelligence: High-quality rule-based reasoning if no API key exists.
+- **Identity**: World-class Cybersecurity AI (Agent Safe-Surf).
+- **Self-Healing Hunter**: Automatically discovers available Gemini models (2.0 Flash, 2.5, etc.) to ensure 100% uptime.
+- **Native Link**: Uses direct Google Generative AI REST endpoints for maximum speed and compatibility.
+- **Edge Personality**: Provides sharp, brilliant, slightly edgy security reports.
 
 ================================================================================
 4. COMPREHENSIVE Q&A: 50 KEY QUESTIONS
@@ -156,13 +156,18 @@ A10: Yes! Simply add your `XAI_API_KEY` to the `.env` file to activate
 - app.py               -> FastAPI Main Entry Point
 
 ================================================================================
-6. HOW TO RUN & PRESENT
------------------------
-1. Activate environment: `.nsvenv\Scripts\activate`
-2. Run database setup (optional): `python networksecurity/component/search_data_ingestion.py`
-3. Launch dashboard: `python app.py`
-4. Access at: `http://localhost:8000`
+6. HOW TO RUN & PRESENT (V3.2)
+------------------------------
+1. **Local Setup**: 
+   - Activate environment: `.nsvenv\Scripts\activate`
+   - Run: `streamlit run streamlit_app.py`
+   - Access: `http://localhost:8501`
+
+2. **Cloud Deployment**:
+   - Push codebase to GitHub.
+   - Connect to Streamlit Cloud with `streamlit_app.py` as entry point.
+   - Inject `GEMINI_API_KEY` into Cloud Secrets.
 
 ================================================================================
-End of Safe-Surf Master Project Guide (Restored & Upgraded)
+End of Safe-Surf Master Project Guide (V3.2 Upgraded Edition)
 ================================================================================

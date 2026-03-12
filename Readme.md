@@ -1,15 +1,15 @@
-# 🛡️ Safe-Surf: Advanced Phishing Intelligence & AI Agent
+# 🛡️ Safe-Surf v3.2: Advanced Phishing Intelligence & AI Agent
 
-Safe-Surf is a next-generation Cybersecurity Intelligence platform designed to detect sophisticated phishing attacks, identity theft, and malicious network activity. It combines **Machine Learning Pipelines**, **Heuristic Research Scanners**, and a **Real-Time AI Reasoning Agent** (Safe-Surf-style) to provide world-class threat analysis.
+Safe-Surf is a next-generation Cybersecurity Intelligence platform designed to detect sophisticated phishing attacks, identity theft, and malicious network activity. It combines **Machine Learning Pipelines**, **Heuristic Research Scanners**, and a **Self-Healing AI Reasoning Agent** (powered by Gemini 2.0/2.5) to provide world-class threat analysis.
 
 ---
 
 ## 🚀 Key Features
 
-###🛡️ MASTER PROJECT GUIDE: SAFE-SURF | ADVANCED PHISHING INTELLIGENCE (2026)
+### 🛡️ 1. Smart Intelligence Agent (v3.2)
 A deep-reasoning AI agent that translates complex security data into human-readable briefings.
-- **Animated Intelligence**: Real-time "typing" briefing effects for a premium feel.
-- **Grok Integration**: Built-in support for **X.ai (Grok-2)** and OpenAI APIs.
+- **Self-Healing Model Discovery**: Automatically identifies the best available model (Gemini 2.0/2.5) for your specific API permissions.
+- **Native Gemini Integration**: Built-in support for **Google Gemini 2.0 Flash** via direct REST API for high-speed analysis.
 - **Zero-Day Reasoning**: Analyzes "why" a site looks dangerous, even if it's never been seen before.
 
 ### 🛡️ 2. Multi-Layer Defense Engine
@@ -28,11 +28,13 @@ A deep-reasoning AI agent that translates complex security data into human-reada
 ---
 
 ## 🛠️ Tech Stack
-- **Backend**: FastAPI (Python)
+- **Cloud Interface**: Streamlit (Latest)
+- **AI Intelligence**: Google Gemini 2.0/2.5 (Native API)
+- **Backend Architecture**: Python 3.11+
 - **Database**: MongoDB Atlas (Cloud)
-- **ML**: Scikit-learn, Pandas, NumPy
-- **Security**: Requests, BeautifulSoup4, WHOIS, Dnspython
-- **Frontend**: Bootstrap 5, Typed.js, Marked.js, Lucide Icons
+- **ML Engine**: Scikit-learn, Random Forest
+- **Network Scanning**: BeautifulSoup4, WHOIS, Dnspython, Requests
+- **Visuals**: Glassmorphism UI, Real-time Threat Gauges
 
 ---
 
@@ -42,26 +44,22 @@ A deep-reasoning AI agent that translates complex security data into human-reada
 - Python 3.9+
 - MongoDB Connection String
 
-### 2. Setup
+### 1. Local Development
 ```bash
 # Activate Environment
 .nsvenv\Scripts\activate
 
 # Install Dependencies
 pip install -r requirements.txt
+
+# Launch Safe-Surf Hub
+streamlit run streamlit_app.py
 ```
 
-### 3. (Optional) Activate Real Grok
-Add your API key to `.env`:
-```env
-XAI_API_KEY=your_key_here
-```
-
-### 4. Run Application
-```bash
-python app.py
-```
-Visit: `http://localhost:8000`
+### 2. Streamlit Cloud Deployment
+- **Entry Point**: `streamlit_app.py`
+- **Secrets**: Add your `GEMINI_API_KEY` (from Google AI Studio) to the Cloud Secrets box.
+- **Auto-Sync**: Project is optimized for auto-deployment from Main branch.
 
 ---
 
