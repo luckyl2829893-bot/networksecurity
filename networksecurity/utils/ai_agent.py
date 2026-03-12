@@ -91,7 +91,8 @@ class PhishingAIAgent:
                 result = response.json()
                 return result['choices'][0]['message']['content']
             else:
-                return f"⚠️ [Agent Connection: Code {response.status_code}] Falling back to local neural analysis...\n\n" + \
+                err_msg = response.text[:100] # Get a snippet of the error
+                return f"⚠️ [Agent Connection: {response.status_code}] {err_msg}...\n\n" + \
                        self._generate_simulated_analysis(query, input_type, risk_score, heuristic_reasons, db_results)
                 
         except Exception as e:
