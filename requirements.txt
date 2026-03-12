@@ -16,6 +16,7 @@ requests
 beautifulsoup4
 python-whois
 dnspython
-
-
-#-e 
+streamlit
+jinja2
+markupsafe
+-e .

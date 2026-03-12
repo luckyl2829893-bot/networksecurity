@@ -100,7 +100,8 @@ def calculate_heuristic_score(input_str: str, input_type: str) -> dict:
         "login", "signin", "verify", "update", "secure", "account", 
         "banking", "paypal", "amazon", "apple", "google", "microsoft",
         "confirm", "wallet", "crypto", "free", "bonus", "alert", "support",
-        "service", "auth", "security"
+        "service", "auth", "security", "sassa", "forms", "app", "billing",
+        "membership", "access", "portal", "relay", "ideas", "industriales"
     ]
     
     found_keywords = [kw for kw in SUSPICIOUS_KEYWORDS if kw in input_lower]
@@ -110,8 +111,11 @@ def calculate_heuristic_score(input_str: str, input_type: str) -> dict:
         details.append(f"Suspicious keywords found: {', '.join(found_keywords)} (+{score_increase})")
 
     # 2. Suspicious TLDs (Top Level Domains)
-    # These are often abused, though not inherently malicious.
-    SUSPICIOUS_TLDS = [".xyz", ".top", ".club", ".info", ".cn", ".ru", ".work", ".gq", ".ml"]
+    SUSPICIOUS_TLDS = [
+        ".xyz", ".top", ".club", ".info", ".cn", ".ru", ".work", 
+        ".gq", ".ml", ".ga", ".cf", ".tk", ".online", ".site", ".live",
+        ".biz", ".loan", ".app"
+    ]
     if any(input_lower.endswith(tld) for tld in SUSPICIOUS_TLDS):
         heuristic_score += 20
         details.append("Uses high-risk TLD (+20)")
@@ -145,6 +149,17 @@ def calculate_heuristic_score(input_str: str, input_type: str) -> dict:
         if slash_slash_count > 1:
              heuristic_score += 40
              details.append("Multiple URL schemes detected (Potential Open Redirect) (+40)")
+
+        # 4.B Deep Subdomain Count (e.g., ideasindustrialesrb.codepro47.net)
+        # Professional sites rarely go more than 2-3 levels deep on external subdomains.
+        try:
+            subdomain_part = parsed.netloc.replace("www.", "")
+            dot_count = subdomain_part.count(".")
+            if dot_count >= 3:
+                heuristic_score += 25
+                details.append(f"Excessive subdomains found ({dot_count} levels deep) (+25)")
+        except:
+            pass
              
         # Check for '@' symbol (Obfuscation)
         if "@" in input_str:

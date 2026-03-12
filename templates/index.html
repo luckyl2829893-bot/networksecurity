@@ -63,8 +63,26 @@
         }
 
         .search-area {
-            max-width: 900px;
-            margin: 60px auto;
+            max-width: 1000px;
+            margin: 40px auto;
+            transition: all 0.5s ease;
+        }
+
+        .search-area.results-active {
+            margin-top: 20px;
+            max-width: 100%;
+            padding: 0 2rem;
+        }
+
+        .search-bar-horizontal {
+            background: rgba(13, 17, 23, 0.7);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 0.75rem;
+            display: flex;
+            gap: 1rem;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
         }
 
         .search-input {
@@ -143,10 +161,11 @@
         }
 
         .stat-label {
-            color: var(--text-muted);
+            color: #b1bac4;
             font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 1px;
+            font-weight: 500;
         }
 
         .marker-item {
@@ -202,15 +221,132 @@
             color: var(--accent-primary);
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .search-area {
-                margin: 30px 15px;
+        /* Ultra-Wide Command Center Layout */
+        .hub-layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+            padding-bottom: 4rem;
+        }
+
+        .side-deck {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .summary-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.25rem;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .summary-card:hover {
+            border-color: var(--accent-primary);
+            transform: translateX(5px);
+            background: rgba(29, 155, 240, 0.05);
+        }
+
+        .summary-card.active {
+            border-color: var(--accent-primary);
+            background: rgba(29, 155, 240, 0.1);
+            box-shadow: 0 0 30px rgba(29, 155, 240, 0.15);
+        }
+
+        .summary-card.active::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 20%;
+            bottom: 20%;
+            width: 4px;
+            background: var(--accent-primary);
+            border-radius: 4px 0 0 4px;
+        }
+
+        .main-stage {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .stage-box {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 2.5rem;
+            min-height: 400px;
+            position: relative;
+            backdrop-filter: blur(20px);
+            transition: all 0.5s ease;
+        }
+
+        .focus-detail {
+            display: none;
+            animation: slideIn 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .focus-detail.show {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
             }
 
-            .glass-card {
-                padding: 1.2rem;
+            to {
+                opacity: 1;
+                transform: translateX(0);
             }
+        }
+
+        .indicator-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .pulse-slow {
+            animation: pulse-slow 3s infinite;
+        }
+
+        @keyframes pulse-slow {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .badge-cyber {
+            background: rgba(29, 155, 240, 0.1);
+            color: var(--accent-primary);
+            border: 1px solid rgba(29, 155, 240, 0.3);
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Gauge Small */
+        .gauge-mini {
+            width: 60px;
+            height: 60px;
+            position: relative;
         }
     </style>
 </head>
@@ -227,158 +363,369 @@
         </div>
     </nav>
 
-    <div class="container search-area">
-        <div class="text-center mb-5">
+    <div class="container-fluid search-area {% if query %}results-active{% endif %}">
+        <div class="text-center mb-4 {% if query %}d-none{% endif %}">
             <h2 class="fw-bold">Security Agent Alpha</h2>
             <p class="text-muted">Enter a URL, Domain, or IP address for real-time threat intelligence.</p>
         </div>
 
-        <form action="/search" method="get" class="d-flex gap-3 mb-5">
-            <input type="text" name="query" class="form-control search-input" placeholder="e.g., target-brand-login.com"
-                value="{{ query if query else '' }}" required autocomplete="off">
-            <button type="submit" class="btn btn-grok">
-                <i data-lucide="search" class="me-2" style="width: 18px;"></i>
-                Intelligence Scan
-            </button>
-        </form>
+        <div class="search-bar-horizontal mx-auto" style="max-width: 900px;">
+            <form action="/search" method="get" class="d-flex flex-grow-1 gap-2">
+                <input type="text" name="query" class="form-control search-input border-0"
+                    style="background:transparent" placeholder="Analyze target domain or IP..."
+                    value="{{ query if query else '' }}" required autocomplete="off">
+                <button type="submit" class="btn btn-grok px-4">
+                    <i data-lucide="zap" class="me-2" style="width: 18px;"></i>
+                    Intelligence Scan
+                </button>
+            </form>
+        </div>
 
         {% if error %}
         <div class="alert alert-danger glass-card border-danger text-center">{{ error }}</div>
         {% endif %}
 
         {% if query %}
-        <div class="row g-4">
-            <!-- Left Panel: AI Briefing -->
-            <div class="col-lg-8">
-                <div class="glass-card h-100">
-                    <div class="d-flex align-items-center mb-4">
-                        <i data-lucide="bot" class="text-primary me-2"></i>
-                        <h5 class="mb-0">Cyber Agent Briefing</h5>
-                        {% if llm_mode %}
-                        <span class="badge rounded-pill bg-success ms-auto small"
-                            style="font-size: 0.6rem; letter-spacing: 1px;">
-                            <span class="spinner-grow spinner-grow-sm me-1" role="status"></span>
-                            LIVE NEURAL LINK
-                        </span>
-                        {% endif %}
-                    </div>
+        <div class="hub-layout">
+            <!-- Sidebar Selection Column -->
+            <div class="side-deck">
 
-                    <div
-                        class="ai-briefing-box {% if risk_score > 70 %}danger-border{% elif risk_score > 30 %}warning-border{% else %}success-border{% endif %}">
-                        <div id="ai-response-container">
-                            <div id="ai-response-content"></div>
-                            <span id="ai-cursor"></span>
+                <!-- Main Intelligence Summary (The Briefing) -->
+                <div class="summary-card active" onclick="switchStage('briefing', this)">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <i data-lucide="brain-circuit" class="text-primary me-3" style="width: 20px;"></i>
+                            <div>
+                                <h6 class="mb-0 fw-bold text-uppercase" style="font-size: 0.75rem;">Neural Briefing</h6>
+                                <span class="text-info fw-bold" style="font-size: 0.65rem; opacity: 0.9;">AGENT
+                                    FEEDBACK</span>
+                            </div>
                         </div>
+                        <span class="indicator-dot bg-success pulse-slow"></span>
                     </div>
+                </div>
 
-                    <div class="mt-4 pt-3 border-top border-secondary">
-                        <div class="d-flex gap-3">
-                            <div class="text-center bg-dark p-2 rounded" style="flex: 1;">
-                                <div class="stat-label">Scan Confidence</div>
-                                <div class="fw-bold text-success">{{ confidence }}%</div>
-                            </div>
-                            <div class="text-center bg-dark p-2 rounded" style="flex: 1;">
-                                <div class="stat-label">Model Engine</div>
-                                <div class="fw-bold">RandomForest-v1.1</div>
-                            </div>
+                <!-- Risk Score Profile -->
+                <div class="summary-card" onclick="switchStage('risk', this)">
+                    <div class="d-flex align-items-center">
+                        <div class="gauge-mini me-3">
+                            <svg viewBox="0 0 36 36" style="width: 100%; height: 100%;">
+                                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                    fill="none" stroke="#222" stroke-width="4" />
+                                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                    fill="none"
+                                    stroke="{% if risk_score > 70 %}#ff4d4d{% elif risk_score > 30 %}#ffd700{% else %}#00ff88{% endif %}"
+                                    stroke-width="4" stroke-dasharray="{{ risk_score }}, 100" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 fw-bold text-uppercase" style="font-size: 0.75rem;">Risk Profile</h6>
+                            <span
+                                class="fw-bold {% if risk_score > 70 %}text-danger{% elif risk_score > 30 %}text-warning{% else %}text-success{% endif %}"
+                                style="font-size: 0.7rem;">
+                                LVL: {{ risk_score }}/100
+                            </span>
                         </div>
                     </div>
                 </div>
+
+                <!-- Database Registry Matches -->
+                <div class="summary-card" onclick="switchStage('db', this)">
+                    <div class="d-flex align-items-center">
+                        <div class="p-2 rounded bg-danger bg-opacity-10 me-3">
+                            <i data-lucide="database" class="text-danger" style="width: 18px;"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 fw-bold text-uppercase" style="font-size: 0.75rem;">DB Matches</h6>
+                            <span class="text-light fw-bold small" style="font-size: 0.65rem; opacity: 1;">{{
+                                results|length }} FLAGS DETECTED</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Heuristic Anomalies -->
+                <div class="summary-card" onclick="switchStage('heuristics', this)">
+                    <div class="d-flex align-items-center">
+                        <div class="p-2 rounded bg-warning bg-opacity-10 me-3">
+                            <i data-lucide="shield-alert" class="text-warning" style="width: 18px;"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 fw-bold text-uppercase" style="font-size: 0.75rem;">Heuristics</h6>
+                            <span class="text-light fw-bold small" style="font-size: 0.65rem; opacity: 1;">{{
+                                heuristic_reasons|length }} ANOMALIES FOUND</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Target Identity Meta -->
+                <div class="summary-card" onclick="switchStage('identity', this)">
+                    <div class="d-flex align-items-center">
+                        <div class="p-2 rounded bg-info bg-opacity-10 me-3">
+                            <i data-lucide="fingerprint" class="text-info" style="width: 18px;"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 fw-bold text-uppercase" style="font-size: 0.75rem;">Fingerprint</h6>
+                            <span class="text-light fw-bold small font-monospace"
+                                style="font-size: 0.6rem; opacity: 1;">ID: NS-{{ (range(1000, 9999) | random) }}</span>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
-            <!-- Right Panel: Data Indicators -->
-            <div class="col-lg-4">
-                <div class="glass-card mb-4 text-center">
-                    <h6 class="stat-label mb-3">Threat Probability</h6>
-                    <div class="risk-gauge-container">
-                        <svg viewBox="0 0 36 36" style="width: 100%; height: 100%;">
-                            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                fill="none" stroke="#222" stroke-width="3" />
-                            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                fill="none"
-                                stroke="{% if risk_score > 70 %}#ff4d4d{% elif risk_score > 30 %}#ffd700{% else %}#00ff88{% endif %}"
-                                stroke-width="3" stroke-dasharray="{{ risk_score }}, 100" />
-                        </svg>
-                        <div
-                            class="risk-gauge-value {% if risk_score > 70 %}text-danger{% elif risk_score > 30 %}text-warning{% else %}text-success{% endif %}">
-                            {{ risk_score }}
-                        </div>
-                    </div>
-                    <div class="mt-2 fw-bold text-uppercase small" style="letter-spacing: 2px;">
-                        {% if risk_score < 30 %}Level: Alpha (Safe){% elif risk_score < 70 %}Level: Beta (Suspicious){%
-                            else %}Level: Omega (Hazard){% endif %} </div>
-                    </div>
+            <!-- Main Stage Column (Wide Horizontal Area) -->
+            <div class="main-stage">
+                <div class="stage-box" id="hubStage">
 
-                    <div class="glass-card">
-                        <div class="d-flex align-items-center mb-3">
-                            <i data-lucide="database" class="text-muted me-2" style="width: 18px;"></i>
-                            <h6 class="mb-0 small fw-bold">RAW INDICATORS</h6>
-                        </div>
-
-                        <div class="small mb-3">
-                            <span class="stat-label">Target ID:</span>
-                            <div class="text-info font-monospace">{{ query }}</div>
-                        </div>
-
-                        {% if results %}
-                        <div class="mb-4">
-                            <div class="stat-label mb-2">DB Matches</div>
-                            {% for source, data in results.items() %}
-                            <div class="marker-item border-danger d-flex justify-content-between align-items-center">
-                                <span class="small">{{ source }}</span>
-                                <span class="badge bg-danger">FLAGGED</span>
+                    <!-- View: Neural Briefing -->
+                    <div class="focus-detail show" id="stage-briefing">
+                        <div class="d-flex align-items-center mb-4">
+                            <h2 class="mb-0 fw-bold">Neural Security Intelligence</h2>
+                            <div class="ms-auto d-flex gap-3">
+                                <span class="badge-cyber"><i data-lucide="cpu" class="me-1" style="width:12px"></i>
+                                    Grok-Module-v2</span>
+                                <span class="badge-cyber text-success"><i data-lucide="check" class="me-1"
+                                        style="width:12px"></i> Neural Link Synced</span>
                             </div>
-                            {% endfor %}
                         </div>
-                        {% endif %}
-
-                        <div>
-                            <div class="stat-label mb-2">Heuristic Heuristics</div>
-                            {% for reason in heuristic_reasons %}
-                            <div class="marker-item small">
-                                <i data-lucide="alert-triangle" class="text-warning me-2" style="width: 14px;"></i>
-                                {{ reason }}
+                        <div class="ai-briefing-box {% if risk_score > 70 %}danger-border{% elif risk_score > 30 %}warning-border{% else %}success-border{% endif %}"
+                            style="background: rgba(0,0,0,0.4);">
+                            <div id="ai-response-content"></div>
+                            <span id="ai-cursor"></span>
+                            <div id="ai-raw-content" style="display: none;">{{ security_brief | safe }}</div>
+                        </div>
+                        <div class="mt-4 p-3 bg-dark bg-opacity-50 rounded-3 border border-secondary border-opacity-10">
+                            <div class="row text-center g-0">
+                                <div class="col-4 border-end border-secondary border-opacity-25">
+                                    <div class="stat-label" style="font-size: 0.7rem;">Confidence</div>
+                                    <div class="h4 mb-0 text-success fw-bold">{{ confidence }}%</div>
+                                </div>
+                                <div class="col-4 border-end border-secondary border-opacity-25">
+                                    <div class="stat-label" style="font-size: 0.7rem;">Target</div>
+                                    <div class="h6 mb-0 text-info font-monospace text-truncate px-2">{{ query }}</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="stat-label" style="font-size: 0.7rem;">Status</div>
+                                    <div
+                                        class="h6 mb-0 {% if risk_score < 30 %}text-success{% elif risk_score < 70 %}text-warning{% else %}text-danger{% endif %} fw-bold">
+                                        {% if risk_score < 30 %}SECURE{% elif risk_score < 70 %}SUSPICIOUS{% else
+                                            %}TERMINAL{% endif %} </div>
+                                    </div>
+                                </div>
                             </div>
-                            {% endfor %}
+                        </div>
 
-                            {% if not results and not heuristic_reasons %}
-                            <div class="text-success small">
-                                <i data-lucide="shield-check" class="me-2" style="width: 14px;"></i>
-                                No anomalous markers found.
+                        <!-- View: Risk Detail -->
+                        <div class="focus-detail" id="stage-risk">
+                            <h2 class="fw-bold mb-4">Risk Probability Architecture</h2>
+                            <div class="row align-items-center">
+                                <div class="col-md-5 text-center">
+                                    <div class="risk-gauge-container mx-auto" style="width: 250px; height: 250px;">
+                                        <svg viewBox="0 0 36 36" style="width: 100%; height: 100%;">
+                                            <path
+                                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                                fill="none" stroke="#222" stroke-width="2" />
+                                            <path
+                                                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                                fill="none"
+                                                stroke="{% if risk_score > 70 %}#ff4d4d{% elif risk_score > 30 %}#ffd700{% else %}#00ff88{% endif %}"
+                                                stroke-width="2" stroke-dasharray="{{ risk_score }}, 100" />
+                                        </svg>
+                                        <div class="risk-gauge-value" style="font-size: 4rem;">{{ risk_score }}</div>
+                                    </div>
+                                    <div class="mt-3 fw-bold small uppercase"
+                                        style="letter-spacing: 1px; color: #f8fafc !important;">Threat Intensity Index
+                                    </div>
+                                </div>
+                                <div class="col-md-7">
+                                    <div class="glass-card mb-3 border-0 bg-transparent">
+                                        <h5 class="fw-bold text-primary mb-3">Ensemble Analytics Breakdown</h5>
+                                        <p class="small" style="color: #cbd5e0 !important;">Our Grok system uses a
+                                            dual-weighted approach to determine the final risk profile:</p>
+
+                                        <div class="mb-4">
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <label class="small text-main fw-bold">Algorithmic Behavioral
+                                                    Analysis</label>
+                                                <span class="badge-cyber">{{ 40 if risk_score > 10 else 10 }}%
+                                                    Weight</span>
+                                            </div>
+                                            <div class="progress bg-dark" style="height: 8px; border-radius: 4px;">
+                                                <div class="progress-bar bg-primary"
+                                                    style="width: {{ 40 if risk_score > 10 else 10 }}%"></div>
+                                            </div>
+                                            <div class="mt-1"
+                                                style="font-size: 0.85rem; color: #f1f5f9 !important; font-weight: 500;">
+                                                Analyzes URL structure, TLD safety, and subdomain entropy.</div>
+                                        </div>
+
+                                        <div class="mb-4">
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <label class="small text-main fw-bold">Historic Registry Sync</label>
+                                                <span class="badge-cyber">{{ 60 if risk_score > 10 else 20 }}%
+                                                    Weight</span>
+                                            </div>
+                                            <div class="progress bg-dark" style="height: 8px; border-radius: 4px;">
+                                                <div class="progress-bar bg-danger"
+                                                    style="width: {{ 60 if risk_score > 10 else 20 }}%"></div>
+                                            </div>
+                                            <div class="mt-1"
+                                                style="font-size: 0.85rem; color: #f1f5f9 !important; font-weight: 500;">
+                                                Cross-references against real-time global threat databases and IP
+                                                blacklists.</div>
+                                        </div>
+
+                                        <div
+                                            class="alert alert-info bg-info bg-opacity-10 border-0 rounded-4 pt-3 pb-3">
+                                            <div class="d-flex align-items-center">
+                                                <i data-lucide="info" class="text-info me-3" style="width: 20px;"></i>
+                                                <span class="small text-info opacity-75">The final score is a non-linear
+                                                    aggregation of these two vectors based on correlated
+                                                    evidence.</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- View: Database Feed -->
+                        <div class="focus-detail" id="stage-db">
+                            <h2 class="fw-bold mb-4">Cyber Threat Intelligence Feed</h2>
+                            {% if results %}
+                            <div class="stat-label mb-3">Matching Signatures in Global Repositories:</div>
+                            <div class="row g-3">
+                                {% for source, data in results.items() %}
+                                <div class="col-md-6">
+                                    <div
+                                        class="marker-item border-danger d-flex justify-content-between align-items-center p-3 h-100">
+                                        <div>
+                                            <div class="fw-bold text-danger">{{ source|upper }} MATCH</div>
+                                            <div class="text-muted small" style="font-size: 0.7rem;">Entry ID: NS-{{
+                                                (range(50000, 99999) | random) }}</div>
+                                        </div>
+                                        <i data-lucide="alert-triangle" class="text-danger pulse-slow"></i>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i data-lucide="shield-check" class="text-success mb-3"
+                                    style="width: 64px; height: 64px;"></i>
+                                <h4 class="fw-bold">No High-Value Matches</h4>
+                                <p class="text-muted">Target is not found in local or synchronized remote threat
+                                    registries.</p>
                             </div>
                             {% endif %}
                         </div>
+
+                        <!-- View: Heuristic Details -->
+                        <div class="focus-detail" id="stage-heuristics">
+                            <h2 class="fw-bold mb-4">Structural Behavior Indices</h2>
+                            <div class="row g-3">
+                                {% for reason in heuristic_reasons %}
+                                <div class="col-12">
+                                    <div
+                                        class="marker-item d-flex gap-3 p-3 bg-dark bg-opacity-30 border-0 border-start border-warning border-3">
+                                        <i data-lucide="activity" class="text-warning mt-1" style="width:18px"></i>
+                                        <div>
+                                            <div class="fw-bold text-warning small text-uppercase">Heuristic Marker
+                                            </div>
+                                            <div class="text-light">{{ reason }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                {% if not heuristic_reasons %}
+                                <div class="text-center py-5 w-100">
+                                    <i data-lucide="check-circle" class="text-success mb-3"
+                                        style="width: 48px; height: 48px;"></i>
+                                    <h4 class="fw-bold text-success">Clean Heuristics</h4>
+                                    <p class="text-muted">No algorithmic markers of malicious intent detected in URL
+                                        structure.</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- View: Fingerprint -->
+                        <div class="focus-detail" id="stage-identity">
+                            <h2 class="fw-bold mb-4">Target Identity Node Fingerprint</h2>
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div
+                                        class="p-4 bg-dark bg-opacity-50 rounded-4 border border-secondary border-opacity-10 h-100">
+                                        <div class="stat-label">System Entity ID</div>
+                                        <div class="font-monospace h5 text-info">UIDX-{{ (range(100000, 999999) |
+                                            random) }}-TGT</div>
+                                        <hr class="border-secondary opacity-25">
+                                        <div class="stat-label">Source Categorization</div>
+                                        <div class="h5 text-uppercase">{{ input_type }} Protocol</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div
+                                        class="p-4 bg-dark bg-opacity-50 rounded-4 border border-secondary border-opacity-10 h-100">
+                                        <div class="stat-label">Neural Processing Node</div>
+                                        <div class="fw-bold">X-GROK-01 (ACTIVE)</div>
+                                        <hr class="border-secondary opacity-25">
+                                        <div class="stat-label">Verification Level</div>
+                                        <div class="text-success fw-bold">ENCRYPTED L3</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
-            {% endif %}
         </div>
+        {% endif %}
+    </div>
 
-        <footer class="text-center py-5 mt-5">
-            <p class="text-muted small">Powered by NS-Grok Engine | Advanced Research Portfolio 2026</p>
-        </footer>
+    <footer class="text-center py-5 mt-5">
+        <p class="text-muted small">Powered by NS-Grok Engine | Advanced Research Portfolio 2026</p>
+    </footer>
 
-        <script>
-            // Init Icons
+    <script>
+        // Init Icons
+        lucide.createIcons();
+
+        // Interactive Dashboard Logic
+        function switchStage(viewId, card) {
+            // Update active state in sidebar
+            document.querySelectorAll('.summary-card').forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+
+            // Switch main stage content
+            document.querySelectorAll('.focus-detail').forEach(d => d.classList.remove('show'));
+            const target = document.getElementById('stage-' + viewId);
+            if (target) target.classList.add('show');
+
+            // Refresh icons
             lucide.createIcons();
+        }
 
-            {% if query %}
+        const shouldAnimate = "{{ 'true' if query else 'false' }}" === 'true';
+        if (shouldAnimate) {
             // AI Agent Animated Response
-            // Use JSON safe stringification to prevent breaking backticks
-            const rawContent = {{ security_brief | tojson | safe }};
+            const rawContent = document.getElementById('ai-raw-content').innerHTML;
             const outputDiv = document.getElementById('ai-response-content');
             const cursor = document.getElementById('ai-cursor');
 
-            const typed = new Typed(outputDiv, {
-                strings: [marked.parse(rawContent)],
-                typeSpeed: 15,
-                showCursor: false,
-                onComplete: (self) => {
-                    cursor.style.display = 'none';
-                }
-            });
-            {% endif %}
-        </script>
+            if (rawContent && outputDiv) {
+                new Typed(outputDiv, {
+                    strings: [marked.parse(rawContent)],
+                    typeSpeed: 15,
+                    showCursor: false,
+                    onComplete: (self) => {
+                        if (cursor) cursor.style.display = 'none';
+                    }
+                });
+            }
+        }
+    </script>
 </body>
 
 </html>

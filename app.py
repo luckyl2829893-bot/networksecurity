@@ -65,6 +65,7 @@ async def train_route():
 @app.get("/search")
 async def search_route(request: Request, query: str):
     try:
+        query = query.strip()
         if not query:
             return templates.TemplateResponse("index.html", {"request": request, "error": "Please enter a query"})
 

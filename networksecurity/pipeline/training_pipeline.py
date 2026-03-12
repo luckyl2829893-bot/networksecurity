@@ -21,7 +21,7 @@ from networksecurity.entity.artifact_entity import (
     DataTransformationArtifact,
     ModelTrainerArtifact,
 )
-from networksecurity.constants.training_pipeline import TRAINING_BUCKET_NAME
+from networksecurity.constant.training_pipeline import TRAINING_BUCKET_NAME
 from networksecurity.cloud.s3_syncer import S3Sync
 from networksecurity.utils.ml_utils.model.estimator import NetworkModel
 
