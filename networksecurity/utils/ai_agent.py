@@ -16,8 +16,8 @@ class PhishingAIAgent:
         
         # Automatic Provider Detection
         if self.api_key and self.api_key.startswith("AIza"):
-            # Use Gemini's OpenAI-compatible endpoint
-            self.api_url = f"https://generativelanguage.googleapis.com/v1beta/openai/chat/completions?key={self.api_key}"
+            # Use Gemini's OpenAI-compatible base endpoint
+            self.api_url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
             # Standard model path for this endpoint
             self.model = "gemini-1.5-flash"
         else:
@@ -75,9 +75,8 @@ class PhishingAIAgent:
             headers = {
                 "Content-Type": "application/json"
             }
-            # Note: For Gemini, the key is already in the URL
-            if not self.api_key.startswith("AIza"):
-                 headers["Authorization"] = f"Bearer {self.api_key}"
+            # Standard OpenAI-style header for all providers (including Gemini)
+            headers["Authorization"] = f"Bearer {self.api_key}"
             data = {
                 "model": self.model, 
                 "messages": [
