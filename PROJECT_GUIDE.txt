@@ -1,6 +1,6 @@
 # ================================================================================
 # LEGACY ARCHIVE: PREVIOUS PROJECT GUIDE (VERSION 1.0)
-# [This content is preserved for reference but is replaced by the NS-Grok engine below]
+# [This content is preserved for reference but is replaced by the Safe-Surf engine below]
 # ================================================================================
 # 
 #  # NETWORK SECURITY PROJECT - COMPLETE GUIDE
@@ -70,12 +70,12 @@
 # ================================================================================
 
 ================================================================================
-🛡️ MASTER PROJECT GUIDE: NS-GROK | ADVANCED PHISHING INTELLIGENCE (2026)
+🛡️ MASTER PROJECT GUIDE: SAFE-SURF | ADVANCED PHISHING INTELLIGENCE (2026)
 ================================================================================
 
 1. PROJECT THEME & VISION
 -------------------------
-NS-Grok is a next-generation security intelligence tool that evolves beyond 
+Safe-Surf is a next-generation security intelligence tool that evolves beyond 
 traditional "static" blacklisting. Its core vision is **"Active Intelligence"**: 
 using high-speed Machine Learning in combination with real-time heuristic 
 research and automated AI reasoning.
@@ -101,7 +101,7 @@ LAYER 3: DYNAMIC RESEARCH SCANNERS (The Investigator)
    - Behavioral Auditor: Scans for suspicious script origins (JS).
 
 ================================================================================
-3. AI AGENT REASONING ENGINE (NS-GROK)
+3. AI AGENT REASONING ENGINE (SAFE-SURF)
 ================================================================================
 
 Developed to provide "Explainable AI" (XAI) security findings:
@@ -114,7 +114,7 @@ Developed to provide "Explainable AI" (XAI) security findings:
 4. COMPREHENSIVE Q&A: 50 KEY QUESTIONS
 ================================================================================
 
-Q1: What is NS-Grok's main purpose?
+Q1: What is Safe-Surf's main purpose?
 A1: To provide a high-end, research-driven platform for detecting phishing 
     at the network, infrastructure, and visual levels.
 
@@ -129,7 +129,7 @@ Q4: What is the "Layer 3" dynamic scanner?
 A4: It's an automated investigative crawler that visits the site to audit 
     its security headers, forms, and redirects.
 
-Q5: Why use "Grok" style AI briefings?
+Q5: Why use "Safe-Surf" style AI briefings?
 A5: It transforms raw technical scores into actionable, high-impact 
     intelligence that anyone can understand.
 
@@ -151,7 +151,7 @@ A10: Yes! Simply add your `XAI_API_KEY` to the `.env` file to activate
 - /networksecurity/    -> Core Intelligence Engine
   - utils/             -> AI Agent & Advanced Scanners
   - component/         -> ML Pipeline Components
-- /templates/          -> Premium "Cyber-Grok" UI (Glassmorphism)
+- /templates/          -> Premium "Safe-Surf" UI (Glassmorphism)
 - /Network_data/       -> ML Datasets
 - app.py               -> FastAPI Main Entry Point
 
@@ -164,5 +164,5 @@ A10: Yes! Simply add your `XAI_API_KEY` to the `.env` file to activate
 4. Access at: `http://localhost:8000`
 
 ================================================================================
-End of NS-Grok Master Project Guide (Restored & Upgraded)
+End of Safe-Surf Master Project Guide (Restored & Upgraded)
 ================================================================================

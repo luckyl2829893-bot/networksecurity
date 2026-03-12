@@ -16,7 +16,7 @@ from networksecurity.utils.ai_agent import get_ai_agent_response
 
 # Set Page Config
 st.set_page_config(
-    page_title="NS-Grok | Cyber Phishing Agent",
+    page_title="Safe-Surf | Cyber Phishing Agent",
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -64,7 +64,7 @@ def perform_scan(query):
     
     total_risk_score = min(db_score + heuristic_score, 100)
     
-    # AI Agent Report
+    # AI Agent Report (Safe-Surf-style)
     security_brief = get_ai_agent_response(query, input_type, total_risk_score, heuristic_reasons, results)
     confidence = 100 - (total_risk_score // 5) if total_risk_score < 50 else 95
     
@@ -84,7 +84,7 @@ if 'scan_results' not in st.session_state:
 
 # --- STREAMLIT UI ---
 # We inject a simple search bar at the top
-st.title("🛡️ NS-Grok Hub")
+st.title("🛡️ Safe-Surf Hub")
 st.markdown("---")
 
 col1, col2 = st.columns([4, 1])
@@ -109,7 +109,7 @@ if st.session_state.scan_results:
     
     # Sidebar Metrics
     with st.sidebar:
-        st.header("Intelligence Feed")
+        st.markdown("### 🤖 Safe-Surf Intelligence Report\n\n")
         st.metric("Risk Score", f"{res['risk_score']}/100", delta="- Malicious" if res['risk_score'] > 50 else "Safe")
         st.metric("Confidence", f"{res['confidence']}%")
         st.write("**Anomalies Detected:**")

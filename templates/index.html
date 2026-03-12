@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NS-Grok | Cyber Phishing Agent</title>
+    <title>Safe-Surf | Cyber Phishing Agent</title>
     <!-- Google Fonts -->
     <link
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
@@ -102,20 +102,20 @@
             color: white;
         }
 
-        .btn-grok {
-            background: var(--accent-primary);
+        .btn-surf {
+            background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
             border: none;
-            border-radius: 12px;
-            padding: 1rem 2rem;
-            font-weight: 600;
             color: white;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(0, 210, 255, 0.3);
             transition: all 0.3s ease;
         }
 
-        .btn-grok:hover {
+        .btn-surf:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(29, 155, 240, 0.3);
-            background: #1a8cd8;
+            box-shadow: 0 8px 25px rgba(0, 210, 255, 0.5);
+            color: white;
         }
 
         .risk-gauge-container {
@@ -209,16 +209,16 @@
             color: var(--accent-success);
         }
 
-        .grok-logo {
-            font-weight: 800;
-            letter-spacing: -1px;
+        .surf-logo {
             font-size: 1.5rem;
-            color: white;
+            font-weight: 800;
+            color: #fff;
             text-decoration: none;
+            letter-spacing: -1px;
         }
 
-        .grok-logo span {
-            color: var(--accent-primary);
+        .surf-logo span {
+            color: #00d2ff;
         }
 
         /* Ultra-Wide Command Center Layout */
@@ -355,7 +355,7 @@
 
     <nav class="navbar navbar-expand-lg">
         <div class="container">
-            <a class="grok-logo" href="/">NS-<span>GROK</span></a>
+            <a class="surf-logo" href="/">SAFE-<span>SURF</span></a>
             <div class="ms-auto d-flex gap-3">
                 <a href="/train" class="nav-link small text-muted">Train Pipeline</a>
                 <a href="/docs" class="nav-link small text-muted">Core API</a>
@@ -374,7 +374,7 @@
                 <input type="text" name="query" class="form-control search-input border-0"
                     style="background:transparent" placeholder="Analyze target domain or IP..."
                     value="{{ query if query else '' }}" required autocomplete="off">
-                <button type="submit" class="btn btn-grok px-4">
+                <button type="submit" class="btn btn-surf px-4">
                     <i data-lucide="zap" class="me-2" style="width: 18px;"></i>
                     Intelligence Scan
                 </button>
@@ -483,7 +483,7 @@
                             <h2 class="mb-0 fw-bold">Neural Security Intelligence</h2>
                             <div class="ms-auto d-flex gap-3">
                                 <span class="badge-cyber"><i data-lucide="cpu" class="me-1" style="width:12px"></i>
-                                    Grok-Module-v2</span>
+                                    Safe-Surf-v2</span>
                                 <span class="badge-cyber text-success"><i data-lucide="check" class="me-1"
                                         style="width:12px"></i> Neural Link Synced</span>
                             </div>
@@ -540,7 +540,7 @@
                                 <div class="col-md-7">
                                     <div class="glass-card mb-3 border-0 bg-transparent">
                                         <h5 class="fw-bold text-primary mb-3">Ensemble Analytics Breakdown</h5>
-                                        <p class="small" style="color: #cbd5e0 !important;">Our Grok system uses a
+                                        <p class="small" style="color: #cbd5e0 !important;">Our Safe-Surf system uses a
                                             dual-weighted approach to determine the final risk profile:</p>
 
                                         <div class="mb-4">
@@ -668,7 +668,7 @@
                                     <div
                                         class="p-4 bg-dark bg-opacity-50 rounded-4 border border-secondary border-opacity-10 h-100">
                                         <div class="stat-label">Neural Processing Node</div>
-                                        <div class="fw-bold">X-GROK-01 (ACTIVE)</div>
+                                        <div class="fw-bold">X-SURF-01 (ACTIVE)</div>
                                         <hr class="border-secondary opacity-25">
                                         <div class="stat-label">Verification Level</div>
                                         <div class="text-success fw-bold">ENCRYPTED L3</div>
@@ -685,7 +685,7 @@
     </div>
 
     <footer class="text-center py-5 mt-5">
-        <p class="text-muted small">Powered by NS-Grok Engine | Advanced Research Portfolio 2026</p>
+        <p class="text-muted small">Powered by Safe-Surf Engine | Advanced Research Portfolio 2026</p>
     </footer>
 
     <script>

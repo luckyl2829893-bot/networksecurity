@@ -45,7 +45,7 @@ class PhishingAIAgent:
         Calls the REAL X.ai (Grok) or OpenAI API with the security research data.
         """
         prompt = f"""
-        Act as a senior Cyber Security Intelligence Agent (Agent NS-Grok). 
+        Act as a senior Cyber Security Intelligence Agent (Agent Safe-Surf). 
         I have found a suspicious {input_type} target: '{query}'.
         
         TECHNICAL DATA FOUND BY OUR SCANNERS:
@@ -54,7 +54,7 @@ class PhishingAIAgent:
         - Database Matches: {list(db_results.keys()) if db_results else 'None'}
         
         TASK:
-        Write a detailed, sharp, and reasoning-based security briefing (Grok-style).
+        Write a detailed, sharp, and reasoning-based security briefing (Safe-Surf-style).
         1. Break down the specific attack vector (e.g., Homograph, Brand Spoofing, Data Exfiltration).
         2. Explain WHY it is dangerous in 2-3 technical bullets.
         3. Give a final 'Verdict' and immediate 'Action' for the user.
@@ -70,7 +70,7 @@ class PhishingAIAgent:
             data = {
                 "model": "grok-2", 
                 "messages": [
-                    {"role": "system", "content": "You are a world-class cybersecurity AI agent named NS-Grok."},
+                    {"role": "system", "content": "You are a world-class cybersecurity AI agent named Safe-Surf."},
                     {"role": "user", "content": prompt}
                 ],
                 "stream": False
@@ -96,7 +96,7 @@ class PhishingAIAgent:
             return self._get_intro(risk_score)
 
         # Build the 'Reasoning' sections
-        analysis = f"### 🤖 NS-Grok Intelligence Report\n\n"
+        analysis = f"### 🤖 Safe-Surf Intelligence Report\n\n"
         analysis += f"{self._get_intro(risk_score)}\n\n"
         
         analysis += "#### 🔍 Investigation Log:\n"

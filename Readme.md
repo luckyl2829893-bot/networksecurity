@@ -1,12 +1,12 @@
-# 🛡️ NS-Grok: Advanced Phishing Intelligence & AI Agent
+# 🛡️ Safe-Surf: Advanced Phishing Intelligence & AI Agent
 
-NS-Grok is a next-generation Cybersecurity Intelligence platform designed to detect sophisticated phishing attacks, identity theft, and malicious network activity. It combines **Machine Learning Pipelines**, **Heuristic Research Scanners**, and a **Real-Time AI Reasoning Agent** (Grok-style) to provide world-class threat analysis.
+Safe-Surf is a next-generation Cybersecurity Intelligence platform designed to detect sophisticated phishing attacks, identity theft, and malicious network activity. It combines **Machine Learning Pipelines**, **Heuristic Research Scanners**, and a **Real-Time AI Reasoning Agent** (Safe-Surf-style) to provide world-class threat analysis.
 
 ---
 
 ## 🚀 Key Features
 
-### 🧠 1. AI Security Agent (NS-Grok)
+###🛡️ MASTER PROJECT GUIDE: SAFE-SURF | ADVANCED PHISHING INTELLIGENCE (2026)
 A deep-reasoning AI agent that translates complex security data into human-readable briefings.
 - **Animated Intelligence**: Real-time "typing" briefing effects for a premium feel.
 - **Grok Integration**: Built-in support for **X.ai (Grok-2)** and OpenAI APIs.
