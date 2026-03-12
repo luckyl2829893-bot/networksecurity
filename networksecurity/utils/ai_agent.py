@@ -12,13 +12,13 @@ class PhishingAIAgent:
     def __init__(self, personality="CyberAnalyst"):
         self.personality = personality
         # Check for XAI (Grok) or OpenAI/Gemini keys
-        self.api_key = os.getenv("XAI_API_KEY") or os.getenv("GROK_API_KEY") or os.getenv("GEMINI_API_KEY")
+        self.api_key = (os.getenv("XAI_API_KEY") or os.getenv("GROK_API_KEY") or os.getenv("GEMINI_API_KEY") or "").strip()
         
         # Automatic Provider Detection
         if self.api_key and self.api_key.startswith("AIza"):
             # Use Gemini's OpenAI-compatible endpoint
             self.api_url = f"https://generativelanguage.googleapis.com/v1beta/openai/chat/completions?key={self.api_key}"
-            self.model = "models/gemini-1.5-flash"
+            self.model = "gemini-1.5-flash"
         else:
             self.api_url = "https://api.x.ai/v1/chat/completions"
             self.model = "grok-2"
