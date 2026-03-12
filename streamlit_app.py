@@ -12,7 +12,30 @@ from networksecurity.utils.advanced_analysis import (
     analyze_open_redirects,
     check_subdomain_takeover
 )
-from networksecurity.utils.ai_agent import get_ai_agent_response
+# Removed external agent import to ensure cloud stability
+# from networksecurity.utils.ai_agent import get_ai_agent_response
+
+# --- NATIVE AI AGENT LOGIC (V3.0) ---
+class SafeSurfAgent:
+    def __init__(self):
+        self.api_key = (os.getenv("XAI_API_KEY") or os.getenv("GEMINI_API_KEY") or "").strip()
+        
+    def get_analysis(self, query, input_type, risk_score, heuristic_reasons):
+        if not self.api_key:
+            return "⚠️ NO API KEY DETECTED. Connect Gemini in Streamlit Secrets."
+            
+        # Native Gemini URL (No headers needed!)
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={self.api_key}"
+        
+        prompt = f"Act as Safe-Surf AI. Analyze this {input_type}: {query}. Risk Score: {risk_score}/100. Alarms: {heuristic_reasons}. Give a sharp, technical briefing with a Verdict and Action. Use markdown."
+        
+        try:
+            res = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=10)
+            if res.status_code == 200:
+                return res.json()['candidates'][0]['content']['parts'][0]['text']
+            return f"⚠️ [Cloud Sync Error {res.status_code}]: {res.text[:50]}"
+        except Exception as e:
+            return f"⚠️ [Local Failover]: {str(e)}"
 
 # Set Page Config
 st.set_page_config(
@@ -65,7 +88,8 @@ def perform_scan(query):
     total_risk_score = min(db_score + heuristic_score, 100)
     
     # AI Agent Report (Safe-Surf-style)
-    security_brief = get_ai_agent_response(query, input_type, total_risk_score, heuristic_reasons, results)
+    agent = SafeSurfAgent()
+    security_brief = agent.get_analysis(query, input_type, total_risk_score, heuristic_reasons)
     confidence = 100 - (total_risk_score // 5) if total_risk_score < 50 else 95
     
     return {
@@ -84,7 +108,7 @@ if 'scan_results' not in st.session_state:
 
 # --- STREAMLIT UI ---
 # We inject a simple search bar at the top
-st.title("🛡️ Safe-Surf Hub")
+st.title("🛡️ Safe-Surf Hub (v3.0)")
 st.markdown("---")
 
 col1, col2 = st.columns([4, 1])
