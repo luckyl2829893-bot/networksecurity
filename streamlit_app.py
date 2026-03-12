@@ -25,16 +25,21 @@ class SafeSurfAgent:
         if not self.api_key:
             return "⚠️ NO API KEY DETECTED. Connect Gemini in Streamlit Secrets."
             
-        # Stable Gemini v1 Endpoint
-        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={self.api_key}"
+        # Use v1beta and 'latest' tag for maximum compatibility
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={self.api_key}"
         
-        prompt = f"Act as Safe-Surf AI Security Agent. Analyze this {input_type}: {query}. Risk Score: {risk_score}/100. Heuristic Alarms: {heuristic_reasons}. Write a sharp, technical security briefing with a final Verdict and Recommended Action. Use Markdown."
+        payload = {
+            "contents": [{"parts": [{"text": f"Act as Safe-Surf AI Security Agent. Analyze this {input_type}: {query}. Risk Score: {risk_score}/100. Heuristic Alarms: {heuristic_reasons}. Write a sharp, technical security briefing with a final Verdict and Recommended Action. Use Markdown."}]}]
+        }
         
         try:
-            res = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=10)
+            res = requests.post(url, json=payload, timeout=12)
             if res.status_code == 200:
-                return res.json()['candidates'][0]['content']['parts'][0]['text']
-            return f"⚠️ [Cloud Sync Error {res.status_code}]: {res.text[:50]}"
+                data = res.json()
+                if 'candidates' in data and len(data['candidates']) > 0:
+                    return data['candidates'][0]['content']['parts'][0]['text']
+                return f"⚠️ [Agent Intelligence Error]: No candidates returned. {str(data)[:100]}"
+            return f"⚠️ [Cloud Sync Error {res.status_code}]: {res.text[:300]}"
         except Exception as e:
             return f"⚠️ [Local Failover]: {str(e)}"
 
