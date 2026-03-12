@@ -14,10 +14,8 @@ class PhishingAIAgent:
         # Check for XAI (Grok) or OpenAI/Gemini keys
         self.api_key = (os.getenv("XAI_API_KEY") or os.getenv("GROK_API_KEY") or os.getenv("GEMINI_API_KEY") or "").strip()
         
-        # Automatic Provider Detection
         if self.api_key and self.api_key.startswith("AIza"):
-            # Use Native Gemini Endpoint (Safest for Auth)
-            self.api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={self.api_key}"
+            # Set provider for Gemini logic
             self.provider = "gemini"
         else:
             self.api_url = "https://api.x.ai/v1/chat/completions"
@@ -73,11 +71,34 @@ class PhishingAIAgent:
 
         try:
             if self.provider == "gemini":
-                # Native Gemini Format
-                headers = {"Content-Type": "application/json"}
-                data = {
-                    "contents": [{"parts": [{"text": prompt}]}]
-                }
+                # --- SELF-HEALING DISCOVERY LOOP (v3.2) ---
+                models_to_try = [
+                    "gemini-2.0-flash",
+                    "gemini-2.5-flash",
+                    "gemini-2.0-flash-lite",
+                    "gemini-1.5-flash",
+                    "gemini-flash-latest"
+                ]
+                
+                gemini_data = {"contents": [{"parts": [{"text": prompt}]}]}
+                last_err = ""
+                
+                # Iterate through endpoints and models
+                for version in ["v1beta", "v1"]:
+                    for model in models_to_try:
+                        url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={self.api_key}"
+                        try:
+                            res = requests.post(url, json=gemini_data, timeout=10)
+                            if res.status_code == 200:
+                                return res.json()['candidates'][0]['content']['parts'][0]['text']
+                            last_err = f"{version}/{model} -> {res.status_code}"
+                        except:
+                            continue
+                
+                # Final discovery failure
+                return f"⚠️ [Safe-Surf Node: 404] Could not find a working model for your key. Last attempt: {last_err}\n\n" + \
+                       self._generate_simulated_analysis(query, input_type, risk_score, heuristic_reasons, db_results)
+
             else:
                 # Standard OpenAI/Grok Format
                 headers = {
@@ -92,18 +113,15 @@ class PhishingAIAgent:
                     ],
                     "stream": False
                 }
-            
-            response = requests.post(self.api_url, headers=headers, json=data, timeout=12)
-            if response.status_code == 200:
-                result = response.json()
-                if self.provider == "gemini":
-                    return result['candidates'][0]['content']['parts'][0]['text']
-                else:
+                
+                response = requests.post(self.api_url, headers=headers, json=data, timeout=12)
+                if response.status_code == 200:
+                    result = response.json()
                     return result['choices'][0]['message']['content']
-            else:
-                err_msg = response.text[:150] # Detailed error log
-                return f"⚠️ [Safe-Surf Node: {response.status_code}] {err_msg}...\n\n" + \
-                       self._generate_simulated_analysis(query, input_type, risk_score, heuristic_reasons, db_results)
+                else:
+                    err_msg = response.text[:150]
+                    return f"⚠️ [Safe-Surf Node: {response.status_code}] {err_msg}...\n\n" + \
+                           self._generate_simulated_analysis(query, input_type, risk_score, heuristic_reasons, db_results)
                 
         except Exception as e:
             return f"⚠️ [Local Failover: {str(e)[:50]}]\n\n" + \

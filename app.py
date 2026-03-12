@@ -7,6 +7,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from starlette.responses import RedirectResponse
 import uvicorn
+from dotenv import load_dotenv
+
+# Load environment variables (Localhost support)
+load_dotenv()
 
 from networksecurity.exception.exception import NetworkSecurityException
 from networksecurity.logging.logger import logging
