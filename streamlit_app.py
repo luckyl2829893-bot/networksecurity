@@ -25,12 +25,12 @@ class SafeSurfAgent:
         if not self.api_key:
             return "⚠️ NO API KEY DETECTED. Connect Gemini in Streamlit Secrets."
             
-        # We will try these models in order until one works
+        # We will try these specific models supported by your key
         models_to_try = [
+            "gemini-2.0-flash",
+            "gemini-2.0-flash-lite",
             "gemini-1.5-flash",
-            "gemini-1.5-flash-8b",
-            "gemini-pro",
-            "gemini-1.5-pro"
+            "gemini-flash-latest"
         ]
         
         prompt = f"Act as Safe-Surf AI Security Agent. Analyze this {input_type}: {query}. Risk Score: {risk_score}/100. Heuristic Alarms: {heuristic_reasons}. Write a sharp, technical security briefing with a final Verdict and Recommended Action. Use Markdown."
@@ -38,7 +38,7 @@ class SafeSurfAgent:
         
         last_error = ""
         # Try different endpoints and model combinations
-        for version in ["v1", "v1beta"]:
+        for version in ["v1beta", "v1"]:
             for model in models_to_try:
                 url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={self.api_key}"
                 try:
@@ -55,9 +55,9 @@ class SafeSurfAgent:
             list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={self.api_key}"
             list_res = requests.get(list_url, timeout=5).json()
             available = [m['name'] for m in list_res.get('models', [])]
-            return f"⚠️ [Final Discovery Fail]: Could not find a working model. Your key supports: {available}. Last attempt: {last_error}"
+            return f"⚠️ [Final Discovery Fail]: Your key supports: {available}. Last attempt: {last_error}"
         except:
-            return f"⚠️ [System Error]: All models failed. Check your API key. Last: {last_error}"
+            return f"⚠️ [System Error]: All models failed. {last_error}"
 
 # Set Page Config
 st.set_page_config(
