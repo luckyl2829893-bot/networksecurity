@@ -25,11 +25,11 @@ class SafeSurfAgent:
         if not self.api_key:
             return "⚠️ NO API KEY DETECTED. Connect Gemini in Streamlit Secrets."
             
-        # We will try these specific models supported by your key
+        # Custom model list based on YOUR specific key permissions (Gemini 2.0/2.5)
         models_to_try = [
             "gemini-2.0-flash",
+            "gemini-2.5-flash",
             "gemini-2.0-flash-lite",
-            "gemini-1.5-flash",
             "gemini-flash-latest"
         ]
         
@@ -42,11 +42,11 @@ class SafeSurfAgent:
             for model in models_to_try:
                 url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={self.api_key}"
                 try:
-                    res = requests.post(url, json=payload, timeout=8)
+                    res = requests.post(url, json=payload, timeout=10)
                     if res.status_code == 200:
                         data = res.json()
                         return data['candidates'][0]['content']['parts'][0]['text']
-                    last_error = f"{version}/{model} -> {res.status_code}"
+                    last_error = f"{version}/{model} -> {res.status_code}: {res.text[:100]}"
                 except:
                     continue
         
@@ -55,9 +55,9 @@ class SafeSurfAgent:
             list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={self.api_key}"
             list_res = requests.get(list_url, timeout=5).json()
             available = [m['name'] for m in list_res.get('models', [])]
-            return f"⚠️ [Final Discovery Fail]: Your key supports: {available}. Last attempt: {last_error}"
+            return f"⚠️ [Safe-Surf Node Error]: Key supports {len(available)} models, but request failed. Last: {last_error}"
         except:
-            return f"⚠️ [System Error]: All models failed. {last_error}"
+            return f"⚠️ [System Error]: Connection failed. {last_error}"
 
 # Set Page Config
 st.set_page_config(
@@ -130,7 +130,7 @@ if 'scan_results' not in st.session_state:
 
 # --- STREAMLIT UI ---
 # We inject a simple search bar at the top
-st.title("🛡️ Safe-Surf Hub (v3.1)")
+st.title("🛡️ Safe-Surf Hub (v3.2)")
 st.markdown("---")
 
 col1, col2 = st.columns([4, 1])
