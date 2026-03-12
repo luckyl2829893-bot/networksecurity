@@ -25,8 +25,8 @@ class SafeSurfAgent:
         if not self.api_key:
             return "⚠️ NO API KEY DETECTED. Connect Gemini in Streamlit Secrets."
             
-        # Use v1beta and 'latest' tag for maximum compatibility
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={self.api_key}"
+        # Use stable v1 and exact model name to fix 404
+        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={self.api_key}"
         
         payload = {
             "contents": [{"parts": [{"text": f"Act as Safe-Surf AI Security Agent. Analyze this {input_type}: {query}. Risk Score: {risk_score}/100. Heuristic Alarms: {heuristic_reasons}. Write a sharp, technical security briefing with a final Verdict and Recommended Action. Use Markdown."}]}]
