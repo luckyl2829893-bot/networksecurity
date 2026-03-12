@@ -18,6 +18,7 @@ class PhishingAIAgent:
         if self.api_key and self.api_key.startswith("AIza"):
             # Use Gemini's OpenAI-compatible endpoint
             self.api_url = f"https://generativelanguage.googleapis.com/v1beta/openai/chat/completions?key={self.api_key}"
+            # Standard model path for this endpoint
             self.model = "gemini-1.5-flash"
         else:
             self.api_url = "https://api.x.ai/v1/chat/completions"
