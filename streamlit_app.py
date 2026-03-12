@@ -16,7 +16,7 @@ from networksecurity.utils.advanced_analysis import (
 # Removed external agent import to ensure cloud stability
 # from networksecurity.utils.ai_agent import get_ai_agent_response
 
-# --- NATIVE AI AGENT LOGIC (V3.0) ---
+# --- SELF-HEALING AI AGENT (V3.1) ---
 class SafeSurfAgent:
     def __init__(self):
         self.api_key = (os.getenv("XAI_API_KEY") or os.getenv("GEMINI_API_KEY") or "").strip()
@@ -25,23 +25,39 @@ class SafeSurfAgent:
         if not self.api_key:
             return "⚠️ NO API KEY DETECTED. Connect Gemini in Streamlit Secrets."
             
-        # Use stable v1 and exact model name to fix 404
-        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={self.api_key}"
+        # We will try these models in order until one works
+        models_to_try = [
+            "gemini-1.5-flash",
+            "gemini-1.5-flash-8b",
+            "gemini-pro",
+            "gemini-1.5-pro"
+        ]
         
-        payload = {
-            "contents": [{"parts": [{"text": f"Act as Safe-Surf AI Security Agent. Analyze this {input_type}: {query}. Risk Score: {risk_score}/100. Heuristic Alarms: {heuristic_reasons}. Write a sharp, technical security briefing with a final Verdict and Recommended Action. Use Markdown."}]}]
-        }
+        prompt = f"Act as Safe-Surf AI Security Agent. Analyze this {input_type}: {query}. Risk Score: {risk_score}/100. Heuristic Alarms: {heuristic_reasons}. Write a sharp, technical security briefing with a final Verdict and Recommended Action. Use Markdown."
+        payload = {"contents": [{"parts": [{"text": prompt}]}]}
         
+        last_error = ""
+        # Try different endpoints and model combinations
+        for version in ["v1", "v1beta"]:
+            for model in models_to_try:
+                url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={self.api_key}"
+                try:
+                    res = requests.post(url, json=payload, timeout=8)
+                    if res.status_code == 200:
+                        data = res.json()
+                        return data['candidates'][0]['content']['parts'][0]['text']
+                    last_error = f"{version}/{model} -> {res.status_code}"
+                except:
+                    continue
+        
+        # If all fail, try to LIST the models to see what is available
         try:
-            res = requests.post(url, json=payload, timeout=12)
-            if res.status_code == 200:
-                data = res.json()
-                if 'candidates' in data and len(data['candidates']) > 0:
-                    return data['candidates'][0]['content']['parts'][0]['text']
-                return f"⚠️ [Agent Intelligence Error]: No candidates returned. {str(data)[:100]}"
-            return f"⚠️ [Cloud Sync Error {res.status_code}]: {res.text[:300]}"
-        except Exception as e:
-            return f"⚠️ [Local Failover]: {str(e)}"
+            list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={self.api_key}"
+            list_res = requests.get(list_url, timeout=5).json()
+            available = [m['name'] for m in list_res.get('models', [])]
+            return f"⚠️ [Final Discovery Fail]: Could not find a working model. Your key supports: {available}. Last attempt: {last_error}"
+        except:
+            return f"⚠️ [System Error]: All models failed. Check your API key. Last: {last_error}"
 
 # Set Page Config
 st.set_page_config(
@@ -114,7 +130,7 @@ if 'scan_results' not in st.session_state:
 
 # --- STREAMLIT UI ---
 # We inject a simple search bar at the top
-st.title("🛡️ Safe-Surf Hub (v3.0)")
+st.title("🛡️ Safe-Surf Hub (v3.1)")
 st.markdown("---")
 
 col1, col2 = st.columns([4, 1])
