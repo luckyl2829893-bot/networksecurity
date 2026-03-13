@@ -72,22 +72,31 @@ class PhishingAIAgent:
 
         try:
             if self.provider == "gemini":
-                # --- HYPER-DISCOVERY LOOP (v3.2.4 Sync) ---
-                models_to_try = [
-                    "gemini-2.0-flash",
-                    "gemini-1.5-flash",
-                    "gemini-2.0-flash-lite-001",
-                    "gemini-1.5-pro",
-                    "gemini-2.5-flash",
-                    "gemini-flash-latest"
-                ]
-                
+                # --- DYNAMIC DISCOVERY ENGINE (v3.2.5 Sync) ---
                 gemini_data = {"contents": [{"parts": [{"text": prompt}]}]}
-                last_err = ""
                 
-                # We try v1beta first as it supports the newest models (2.0/2.5)
-                for version in ["v1beta", "v1"]:
-                    for model in models_to_try:
+                # 1. Fetch exactly what this key supports
+                models_to_try = []
+                try:
+                    list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={self.api_key}"
+                    list_res = requests.get(list_url, timeout=5).json()
+                    available = [m['name'].replace('models/', '') for m in list_res.get('models', []) 
+                                if 'generateContent' in m.get('supportedGenerationMethods', [])]
+                    
+                    priority = ["2.5-flash", "2.0-flash", "1.5-flash", "1.5-pro", "pro"]
+                    for p in priority:
+                        for a in available:
+                            if p in a.lower():
+                                models_to_try.append(a)
+                    
+                    models_to_try.extend([m for m in available if m not in models_to_try])
+                except:
+                    models_to_try = ["gemini-1.5-flash", "gemini-pro"]
+
+                last_err = ""
+                # 2. Try the discovered models
+                for model in models_to_try[:8]:
+                    for version in ["v1beta", "v1"]:
                         url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={self.api_key}"
                         try:
                             # Short timeout for fast skipping
@@ -101,8 +110,8 @@ class PhishingAIAgent:
                             continue
                 
                 # If we get here, log the total failure
-                print(f"--- [Safe-Surf Node] FATAL: All Gemini models 404'd. Last: {last_err} ---")
-                return f"⚠️ [Safe-Surf Node: 404] Local Gemini connection failed. Last: {last_err}\n\n" + \
+                print(f"--- [Safe-Surf Node] FATAL: Dynamic discovery failed. Last: {last_err} ---")
+                return f"⚠️ [Safe-Surf Node: 404] Dynamic discovery failed. Last: {last_err}\n\n" + \
                        self._generate_simulated_analysis(query, input_type, risk_score, heuristic_reasons, db_results)
 
             else:

@@ -29,44 +29,44 @@ class SafeSurfAgent:
         if not self.api_key:
             return "⚠️ NO API KEY DETECTED. Connect Gemini in Streamlit Secrets."
             
-        # Complete experimental model list (v3.2.1)
-        models_to_try = [
-            "gemini-2.0-flash",
-            "gemini-1.5-flash",
-            "gemini-2.0-flash-lite-001",
-            "gemini-1.5-pro",
-            "gemini-2.5-flash",
-            "gemini-flash-latest"
-        ]
-        
+        # --- DYNAMIC DISCOVERY ENGINE (v3.2.5) ---
         prompt = f"Act as Safe-Surf AI Security Agent. Analyze this {input_type}: {query}. Risk Score: {risk_score}/100. Heuristic Alarms: {heuristic_reasons}. Write a sharp, technical security briefing with a final Verdict and Recommended Action. Use Markdown."
         payload = {"contents": [{"parts": [{"text": prompt}]}]}
         
+        # 1. Fetch exactly what this key supports
+        models_to_try = []
+        try:
+            list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={self.api_key}"
+            list_res = requests.get(list_url, timeout=5).json()
+            available = [m['name'].replace('models/', '') for m in list_res.get('models', []) 
+                        if 'generateContent' in m.get('supportedGenerationMethods', [])]
+            
+            # Prioritize newest flash models
+            priority = ["2.5-flash", "2.0-flash", "1.5-flash", "1.5-pro", "pro"]
+            for p in priority:
+                for a in available:
+                    if p in a.lower():
+                        models_to_try.append(a)
+            
+            # Add everything else as fallback
+            models_to_try.extend([m for m in available if m not in models_to_try])
+        except:
+            models_to_try = ["gemini-1.5-flash", "gemini-pro"]
+
         last_error = ""
-        # Try different endpoints and model combinations
-        # We try v1beta first as it supports the newest models (2.0/2.5)
-        for version in ["v1beta", "v1"]:
-            for model in models_to_try:
+        # 2. Try the discovered models
+        for model in models_to_try[:8]: # Try top 8 candidates
+            for version in ["v1beta", "v1"]:
                 url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={self.api_key}"
                 try:
                     res = requests.post(url, json=payload, timeout=10)
                     if res.status_code == 200:
-                        data = res.json()
-                        return data['candidates'][0]['content']['parts'][0]['text']
-                    # Log failure for discovery message
+                        return res.json()['candidates'][0]['content']['parts'][0]['text']
                     last_error = f"{version}/{model} ({res.status_code})"
-                except Exception as e:
-                    last_error = f"ConnErr ({str(e)[:30]})"
+                except:
                     continue
         
-        # If all fail, try to LIST the models to see what really is available
-        try:
-            list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={self.api_key}"
-            list_res = requests.get(list_url, timeout=5).json()
-            available = [m['name'].replace('models/', '') for m in list_res.get('models', [])]
-            return f"⚠️ [Safe-Surf Node Error]: Key supports {len(available)} models, but discovery failed. Last: {last_error}. Try one of: {available[:3]}..."
-        except:
-            return f"⚠️ [System Error]: Connection failed. {last_error}"
+        return f"⚠️ [Safe-Surf Node Error]: Dynamic discovery failed. Final attempt: {last_error}"
 
 # Set Page Config
 st.set_page_config(
