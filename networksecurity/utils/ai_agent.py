@@ -6,7 +6,7 @@ import json
 class PhishingAIAgent:
     """
     A sophisticated AI Security Agent that provides deep, reasoning-based analysis 
-    of phishing threats. It supports REAL Grok (X.AI) or OpenAI-compatible APIs.
+    of phishing threats. Supports Gemini, Grok, and OpenAI.
     """
     
     def __init__(self, personality="CyberAnalyst"):
@@ -15,12 +15,13 @@ class PhishingAIAgent:
         self.api_key = (os.getenv("XAI_API_KEY") or os.getenv("GROK_API_KEY") or os.getenv("GEMINI_API_KEY") or "").strip()
         
         if self.api_key and self.api_key.startswith("AIza"):
-            # Set provider for Gemini logic
             self.provider = "gemini"
+            print(f"--- [Safe-Surf Node] Localhost: INITIALIZED Gemini v3.2.3 (Key: {len(self.api_key)} chars) ---")
         else:
             self.api_url = "https://api.x.ai/v1/chat/completions"
             self.provider = "openai"
             self.model = "grok-2"
+            print(f"--- [Safe-Surf Node] Localhost: INITIALIZED Grok/OpenAI (Key: {len(self.api_key)} chars) ---")
 
     def _get_intro(self, risk_score):
         if risk_score > 80:
@@ -42,7 +43,7 @@ class PhishingAIAgent:
         """
         Main entry point. Calls REAL API if key exists, else falling back to simulation.
         """
-        if self.api_key and risk_score > 10:
+        if self.api_key:
             return self._fetch_real_llm_analysis(query, input_type, risk_score, heuristic_reasons, db_results)
         
         return self._generate_simulated_analysis(query, input_type, risk_score, heuristic_reasons, db_results)
@@ -71,32 +72,37 @@ class PhishingAIAgent:
 
         try:
             if self.provider == "gemini":
-                # --- SELF-HEALING DISCOVERY LOOP (v3.2) ---
+                # --- HYPER-DISCOVERY LOOP (v3.2.4 Sync) ---
                 models_to_try = [
                     "gemini-2.0-flash",
-                    "gemini-2.5-flash",
-                    "gemini-2.0-flash-lite",
                     "gemini-1.5-flash",
+                    "gemini-2.0-flash-lite-001",
+                    "gemini-1.5-pro",
+                    "gemini-2.5-flash",
                     "gemini-flash-latest"
                 ]
                 
                 gemini_data = {"contents": [{"parts": [{"text": prompt}]}]}
                 last_err = ""
                 
-                # Iterate through endpoints and models
+                # We try v1beta first as it supports the newest models (2.0/2.5)
                 for version in ["v1beta", "v1"]:
                     for model in models_to_try:
                         url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={self.api_key}"
                         try:
-                            res = requests.post(url, json=gemini_data, timeout=10)
+                            # Short timeout for fast skipping
+                            res = requests.post(url, json=gemini_data, timeout=8)
                             if res.status_code == 200:
+                                print(f"--- [Safe-Surf Node] Gemini Success: {version}/{model} ---")
                                 return res.json()['candidates'][0]['content']['parts'][0]['text']
-                            last_err = f"{version}/{model} -> {res.status_code}"
-                        except:
+                            last_err = f"{version}/{model} ({res.status_code})"
+                        except Exception as e:
+                            last_err = f"NetErr ({str(e)[:20]})"
                             continue
                 
-                # Final discovery failure
-                return f"⚠️ [Safe-Surf Node: 404] Could not find a working model for your key. Last attempt: {last_err}\n\n" + \
+                # If we get here, log the total failure
+                print(f"--- [Safe-Surf Node] FATAL: All Gemini models 404'd. Last: {last_err} ---")
+                return f"⚠️ [Safe-Surf Node: 404] Local Gemini connection failed. Last: {last_err}\n\n" + \
                        self._generate_simulated_analysis(query, input_type, risk_score, heuristic_reasons, db_results)
 
             else:

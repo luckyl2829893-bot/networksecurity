@@ -3,7 +3,11 @@ import streamlit.components.v1 as components
 import os
 import json
 import requests
+from dotenv import load_dotenv
 from urllib.parse import urlparse
+
+# Load local environment variables (for Localhost)
+load_dotenv()
 
 # Import your core logic
 from networksecurity.utils.search_utils import identify_input_type, calculate_risk_score, calculate_heuristic_score
@@ -25,11 +29,13 @@ class SafeSurfAgent:
         if not self.api_key:
             return "⚠️ NO API KEY DETECTED. Connect Gemini in Streamlit Secrets."
             
-        # Custom model list based on YOUR specific key permissions (Gemini 2.0/2.5)
+        # Complete experimental model list (v3.2.1)
         models_to_try = [
             "gemini-2.0-flash",
+            "gemini-1.5-flash",
+            "gemini-2.0-flash-lite-001",
+            "gemini-1.5-pro",
             "gemini-2.5-flash",
-            "gemini-2.0-flash-lite",
             "gemini-flash-latest"
         ]
         
@@ -38,6 +44,7 @@ class SafeSurfAgent:
         
         last_error = ""
         # Try different endpoints and model combinations
+        # We try v1beta first as it supports the newest models (2.0/2.5)
         for version in ["v1beta", "v1"]:
             for model in models_to_try:
                 url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={self.api_key}"
@@ -46,16 +53,18 @@ class SafeSurfAgent:
                     if res.status_code == 200:
                         data = res.json()
                         return data['candidates'][0]['content']['parts'][0]['text']
-                    last_error = f"{version}/{model} -> {res.status_code}: {res.text[:100]}"
-                except:
+                    # Log failure for discovery message
+                    last_error = f"{version}/{model} ({res.status_code})"
+                except Exception as e:
+                    last_error = f"ConnErr ({str(e)[:30]})"
                     continue
         
-        # If all fail, try to LIST the models to see what is available
+        # If all fail, try to LIST the models to see what really is available
         try:
             list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={self.api_key}"
             list_res = requests.get(list_url, timeout=5).json()
-            available = [m['name'] for m in list_res.get('models', [])]
-            return f"⚠️ [Safe-Surf Node Error]: Key supports {len(available)} models, but request failed. Last: {last_error}"
+            available = [m['name'].replace('models/', '') for m in list_res.get('models', [])]
+            return f"⚠️ [Safe-Surf Node Error]: Key supports {len(available)} models, but discovery failed. Last: {last_error}. Try one of: {available[:3]}..."
         except:
             return f"⚠️ [System Error]: Connection failed. {last_error}"
 

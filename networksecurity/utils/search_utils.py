@@ -218,7 +218,23 @@ def calculate_heuristic_score(input_str: str, input_type: str) -> dict:
                 details.append(f"Potential typosquatting in subdomain '{part}' (Simulates '{brand}') (+40)")
                 break 
 
-    # 6. Homograph / Punycode Attack Detection
+    # 6. Gibberish / DGA Detection (Entropy Analysis)
+    # Detects random strings like 'aabbajaabadaaba' commonly used in zero-day attacks
+    domain_part = clean_input.split('.')[0]
+    if len(domain_part) > 10:
+        vowels = set("aeiou")
+        vowel_count = sum(1 for char in domain_part if char in vowels)
+        # Random gibberish often has very high or very low vowel ratios
+        # or uses repeating clusters.
+        vowel_ratio = vowel_count / len(domain_part)
+        UNIQUE_CHARS = len(set(domain_part))
+        
+        # Heuristic: If vowels are < 15% or > 80%, or if unique chars are very low/high relative to length
+        if vowel_ratio < 0.15 or vowel_ratio > 0.8 or (UNIQUE_CHARS < len(domain_part) * 0.3):
+            heuristic_score += 30
+            details.append(f"High-Entropy/Gibberish domain detected ('{domain_part}') (+30)")
+
+    # 7. Homograph / Punycode Attack Detection
     if is_homograph_attack(input_str):
         heuristic_score += 90
         details.append("Homograph Attack detected: URL uses non-standard characters to spoof a domain (+90)")
