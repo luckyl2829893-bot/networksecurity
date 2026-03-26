@@ -99,6 +99,9 @@ LAYER 3: DYNAMIC RESEARCH SCANNERS (The Investigator)
    - Open Redirect Scanner: Detects malicious "Tunneling" in URLs.
    - Subdomain Takeover: Checks DNS CNAMEs for abandoned cloud buckets.
    - Behavioral Auditor: Scans for suspicious script origins (JS).
+   - Visual Quishing Detector: Exposes image-based QR Scams with Zero-text payloads.
+   - Routing Tracer: De-obfuscates multi-hop Ephemeral Redirect Chains.
+   - Trusted Host Scanner: Catches compromised domains (like Microsoft/Google) hosting covert phishing forms.
 
 ================================================================================
 3. AI AGENT REASONING ENGINE (v3.2)
@@ -144,6 +147,12 @@ A7: Through a modular pipeline (Ingestion -> Validation -> Transformation ->
 Q10: Can I use a real LLM like Grok-2?
 A10: Yes! Simply add your `XAI_API_KEY` to the `.env` file to activate 
      the "Live Neural Link".
+
+Q11: What is a "Quishing" Attack?
+A11: QR Phishing. Attackers hide malicious URLs inside QR codes to evade standard text scanners and force users onto unsecured mobile devices.
+
+Q12: How does Safe-Surf stop Quishing?
+A12: It parses the raw HTML looking for suspicious "Image-to-Text Ratios" (<100 chars but containing visual payloads) to flag visual scams.
 
 ================================================================================
 5. TECHNICAL DIRECTORY STRUCTURE

@@ -24,6 +24,9 @@ LAYER 3: DYNAMIC SCANNED INTELLIGENCE (The Investigator)
    - Open Redirect Scanner: Detects malicious "Tunneling" in URLs.
    - Subdomain Takeover: Checks DNS CNAMEs for abandoned cloud buckets.
    - Script Auditor: Flags suspicious third-party JavaScript.
+   - Visual-Only Payload Scanner: Detects QR code/Image evasion (Quishing) by analyzing DOM text ratios.
+   - Evasive Redirect Tracer: Follows multi-hop ephemeral HTTP redirect chains designed to evade scanners.
+   - Trusted Host Auditor: Flags compromised reputable domains (like Microsoft or Medium) hosting covert phishing forms.
 
 ================================================================================
 3. COMPREHENSIVE Q&A: 100 FREQUENTLY ASKED QUESTIONS
@@ -129,7 +132,10 @@ Q29: Why is standard antivirus often ineffective here?
 A29: Standard antivirus usually relies on signatures; our tool analyzes behavior.
 
 Q30: What is the future scope of this project?
-A30: Adding Computer Vision and real-time email scanning.
+A30: Adding Computer Vision and real-time email scanning. (Update: We recently achieved Deep DOM scanning to catch Visual Payload/QR Scams natively!)
+
+Q31: What is Quishing?
+A31: QR Phishing, where a malicious URL is hidden inside a QR code to evade text-based scanners and force the user to switch to a less secure mobile device.
 
 [... Sections for Q31-Q100 omitted here for space but included in the folder file ...]
 
