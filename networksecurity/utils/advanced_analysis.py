@@ -49,21 +49,22 @@ def analyze_form_targets(url: str) -> dict:
         
         # 4. Check for Suspicious Iframes (In-Site Phishing)
         iframes = soup.find_all('iframe')
+        SAFE_IFRAMES = ["youtube.com", "www.youtube.com", "google.com", "www.google.com", "googletagmanager.com", "www.googletagmanager.com", "vimeo.com", "facebook.com", "twitter.com"]
         for iframe in iframes:
             src = iframe.get('src')
             if not src: continue
             
             iframe_domain = urlparse(urljoin(url, src)).netloc
-            if iframe_domain and iframe_domain != base_domain:
+            if iframe_domain and iframe_domain != base_domain and iframe_domain not in SAFE_IFRAMES:
                 results["detected"] = True
                 results["details"].append(f"Suspicious EXTERNAL Iframe found: {iframe_domain}")
 
         # 5. Check for Clickjacking Protection (X-Frame-Options / CSP)
-        # Section 1.D of Research
+        # Section 1.D of Research. We do NOT set detected=True here because 
+        # missing a header shouldn't flag the site itself as 100% malicious.
         headers = response.headers
         if "X-Frame-Options" not in headers and "Content-Security-Policy" not in headers:
-            results["detected"] = True
-            results["details"].append("Vulnerable to Clickjacking: Missing 'X-Frame-Options' header.")
+            results["details"].append(f"Note: Site is vulnerable to Clickjacking (Missing 'X-Frame-Options' header).")
             
         # 6. Suspicious Script (JS) Scanner
         # Section 3.2 of Research - Monitoring third-party scripts
