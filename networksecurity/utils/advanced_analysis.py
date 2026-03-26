@@ -17,8 +17,14 @@ def analyze_form_targets(url: str) -> dict:
         if not url.startswith(("http://", "https://")):
             url = "http://" + url
             
-        # 1. Fetch the page (with a timeout to avoid hanging)
-        response = requests.get(url, timeout=5, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+        # 1. Fetch the page (track redirects to detect Ephemeral/Evasive Routing)
+        response = requests.get(url, timeout=5, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}, allow_redirects=True)
+        
+        # Check for Ephemeral / Evasive Redirect Chains (Gap: Ephemeral Links)
+        if len(response.history) >= 2:
+            results["detected"] = True
+            results["details"].append(f"Ephemeral/Evasive Routing: URL redirected {len(response.history)} times before resolving.")
+            
         if response.status_code != 200:
             return results
             
@@ -71,6 +77,23 @@ def analyze_form_targets(url: str) -> dict:
             if script_domain and any(script_domain.endswith(tld) for tld in high_risk_tlds):
                 results["detected"] = True
                 results["details"].append(f"Suspicious Script detected from high-risk domain: {script_domain}")
+
+        # 7. Visual-Only Payload Detection (Gap: Visual-Only Phishing)
+        # Phishing pages sometimes use large images/QR codes with zero text to evade keyword scanners.
+        page_text = soup.get_text(separator=' ', strip=True)
+        images = soup.find_all('img')
+        if len(page_text) < 100 and len(images) > 0:
+            results["detected"] = True
+            results["details"].append("Visual-Only Payload: Page has almost no text but contains images (Common QR/Image Phishing).")
+
+        # 8. Compromised Trusted Host Detection (Gap: Compromised Trusted Domains)
+        TRUSTED_HOSTS = ["medium.com", "sites.google.com", "docs.google.com", "firebaseapp.com", "github.io", "notion.site", "canva.com"]
+        if any(trusted in base_domain for trusted in TRUSTED_HOSTS):
+            # If it's a trusted host but contains severe phishing keywords or asks for passwords
+            phish_keywords = ["verify your account", "session expired", "wallet connect", "seed phrase", "account suspended"]
+            if any(pw in page_text.lower() for pw in phish_keywords) or soup.find("input", {"type": "password"}):
+                results["detected"] = True
+                results["details"].append(f"Compromised Trusted Domain: '{base_domain}' is acting maliciously (asking for credentials/verifications).")
 
         return results
         

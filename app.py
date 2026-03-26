@@ -28,11 +28,12 @@ from networksecurity.utils.advanced_analysis import (
 from networksecurity.utils.ai_agent import get_ai_agent_response
 
 
+import certifi
 try:
     from pymongo import MongoClient
     mongo_db_url = os.getenv("MONGO_DB_URL")
     if mongo_db_url:
-        client = MongoClient(mongo_db_url)
+        client = MongoClient(mongo_db_url, tlsCAFile=certifi.where())
         search_db = client["PhishingDetectionDB"]
     else:
         search_db = None
@@ -76,7 +77,7 @@ async def search_route(request: Request, query: str):
         input_type = identify_input_type(query)
         results = {}
         
-        if search_db:
+        if search_db is not None:
             if input_type == "ip":
                 ip_doc = search_db["ips"].find_one({"ip": query})
                 if ip_doc:

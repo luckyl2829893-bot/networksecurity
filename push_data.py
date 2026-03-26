@@ -38,7 +38,8 @@ class NetworkDataExtract():
             self.collection=collection
             self.records=records
 
-            self.mongo_client=pymongo.MongoClient(MONGO_DB_URL)
+            import certifi
+            self.mongo_client=pymongo.MongoClient(MONGO_DB_URL, tlsCAFile=certifi.where())
             self.database = self.mongo_client[self.database]
             
             self.collection=self.database[self.collection]
