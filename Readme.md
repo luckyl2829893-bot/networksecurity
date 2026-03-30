@@ -19,6 +19,10 @@ A deep-reasoning AI agent that translates complex security data into human-reada
   - **Cross-Origin Auditor**: Detects forms stealing data to external servers.
   - **Open Redirect Scanner**: Identifies hidden malicious tunnels.
   - **Subdomain Takeover**: Monitors DNS for abandoned cloud resources.
+  - **Behavioral Script Auditor**: Flags suspicious third-party JavaScript.
+  - **Visual Quishing Detector**: Detects zero-text, visual-only payloads (QR codes/Image abuse).
+  - **Evasive Routing Tracer**: De-obfuscates multi-hop ephemeral redirect chains.
+  - **Trusted Host Scanner**: Catches compromised reputable domains hosting covert phishing forms.
 
 ### 🌌 3. Premium Cyber-Dashboard
 - **Dark Mode UI**: Professional "Glassmorphism" aesthetic.
@@ -56,7 +60,18 @@ pip install -r requirements.txt
 streamlit run streamlit_app.py
 ```
 
-### 2. Streamlit Cloud Deployment
+### 2. Local Research & Simulation (Mock Phishing)
+To test the advanced zero-day threat detection (Quishing, Data Harvest, etc.), you can run the built-in mock server before launching the Safe-Surf Hub.
+```bash
+# In a new terminal, activate environment
+.nsvenv\Scripts\activate
+
+# Run the mock phishing server
+python mock_phishing_server.py
+```
+*Navigating to the provided `http://localhost:8081` endpoints will dynamically simulate phishing attacks for testing.*
+
+### 3. Streamlit Cloud Deployment
 - **Entry Point**: `streamlit_app.py`
 - **Secrets**: Add your `GEMINI_API_KEY` (from Google AI Studio) to the Cloud Secrets box.
 - **Auto-Sync**: Project is optimized for auto-deployment from Main branch.
