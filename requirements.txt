@@ -1,18 +1,19 @@
-python-dotenv
-pandas
-pymongo
-numpy<2.0.0
-certifi
-fastapi
-scikit-learn
-uvicorn
-python-multipart
-requests
-beautifulsoup4
-python-whois
-dnspython
-streamlit>=1.35.0
-jinja2
-markupsafe
-setuptools
-altair<5
+python-dotenv   # for loading environment variables from .env file and keep ur secrets out of ur code
+pandas   #for loading phihsing datasets and feature engineering
+pymongo   # for connecting to mongodb atlas
+numpy<2.0.0 # for numerical operations and array manipulation
+certifi   # for SSL certificate verification, needed for making the connection secure to pymongo
+fastapi   # for building the web application
+scikit-learn  # for machine learning , random forest , knnimputer , train test split , model evaluation
+uvicorn   # for running the fastapi application
+python-multipart   # for handling file uploads in fastapi (like if a user uploads a list of 1000 urls)to scan
+requests   # for making HTTP requests to external APIs
+beautifulsoup4   # for parsing HTML and XML documents
+python-whois   # for performing WHOIS lookups,check the id cards of the domain
+dnspython   # for sub domain takeover checks . it queries dns records like(cname) to check if site is poinitng to an abondoned site or cloud bucket
+streamlit>=1.35.0   # for building the web application
+jinja2   # for template rendering
+markupsafe   # for template rendering help format that text safely this and jnja2 are used together
+setuptools   # for packaging and distributing the project
+altair<5   # for data visualization handles interactive buttons without writing extra html/css code
+mlflow   # for experiment tracking and model management

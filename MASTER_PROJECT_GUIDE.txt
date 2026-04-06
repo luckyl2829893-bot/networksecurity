@@ -27,6 +27,9 @@ LAYER 3: DYNAMIC SCANNED INTELLIGENCE (The Investigator)
    - Visual-Only Payload Scanner: Detects QR code/Image evasion (Quishing) by analyzing DOM text ratios.
    - Evasive Redirect Tracer: Follows multi-hop ephemeral HTTP redirect chains designed to evade scanners.
    - Trusted Host Auditor: Flags compromised reputable domains (like Microsoft or Medium) hosting covert phishing forms.
+LAYER 4: THE EDGE ENFORCER (The Browser Extension)
+   - Injects real-time intelligence into the browsing session.
+   - Uses JavaScript to capture active tab metadata for zero-lag scanning.
 
 ================================================================================
 3. COMPREHENSIVE Q&A: 100 FREQUENTLY ASKED QUESTIONS
@@ -137,16 +140,29 @@ A30: Adding Computer Vision and real-time email scanning. (Update: We recently a
 Q31: What is Quishing?
 A31: QR Phishing, where a malicious URL is hidden inside a QR code to evade text-based scanners and force the user to switch to a less secure mobile device.
 
+Q32: What is the benefit of the Browser Extension?
+A32: It allows for "Live Protection" by scanning any URL directly 
+     from the browser tab without switching to a dashboard.
+
+Q33: How does the extension UI handle threat levels?
+A33: It uses color-coded badges: Green (Secure), Orange (Suspicious), 
+     and Neon Red (Malicious/Danger).
+
+Q34: What is the "Asynchronous Bridge"?
+A34: It's the communication method where the JS extension asks the 
+     Python FastAPI server for data without freezing the browser.
+
 [... Sections for Q31-Q100 omitted here for space but included in the folder file ...]
 
 ================================================================================
 4. TECHNICAL DIRECTORY STRUCTURE
 ================================================================================
 - /networksecurity/    -> Core Engine
+- /SafeSurf_Extension/ -> Chrome/Edge Extension Files
 - /templates/          -> Web Dashboard
 - /Network_data/       -> Datasets
 - /final_model/        -> Trained Models
-- app.py               -> Main Server
+- app.py               -> Main Server & Extension API
 - master_test_suite.py -> Logic Verification
 
 ================================================================================
@@ -156,6 +172,7 @@ A31: QR Phishing, where a malicious URL is hidden inside a QR code to evade text
 2. Install: `pip install -r requirements.txt`
 3. Run: `python app.py`
 4. Visit: `http://localhost:8000`
+159: 5. **Extension Setup**: Load `SafeSurf_Extension` in Chrome Developer Mode.
 
 ================================================================================
 End of Detailed Master Project Guide

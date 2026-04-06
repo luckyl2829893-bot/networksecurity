@@ -23,6 +23,12 @@ A deep-reasoning AI agent that translates complex security data into human-reada
   - **Visual Quishing Detector**: Detects zero-text, visual-only payloads (QR codes/Image abuse).
   - **Evasive Routing Tracer**: De-obfuscates multi-hop ephemeral redirect chains.
   - **Trusted Host Scanner**: Catches compromised reputable domains hosting covert phishing forms.
+26: 
+27: ### 🌐 4. Safe-Surf Browser Extension (New!)
+28: A professional Chrome/Edge extension that brings real-time threat intelligence directly to your browsing session.
+29: - **Instant Tab Scanning**: One-click analysis of any active website.
+30: - **Decoupled Architecture**: Communicates with the FastAPI backend for light-speed performance.
+31: - **Live Risk Badge**: Visual status indicators (Secure/Suspicious/Danger).
 
 ### 🌌 3. Premium Cyber-Dashboard
 - **Dark Mode UI**: Professional "Glassmorphism" aesthetic.
@@ -39,6 +45,7 @@ A deep-reasoning AI agent that translates complex security data into human-reada
 - **ML Engine**: Scikit-learn, Random Forest
 - **Network Scanning**: BeautifulSoup4, WHOIS, Dnspython, Requests
 - **Visuals**: Glassmorphism UI, Real-time Threat Gauges
+- **Extension Interface**: JavaScript (ES6+), HTML5, CSS3 (Custom Variables)
 
 ---
 
@@ -75,6 +82,14 @@ python mock_phishing_server.py
 - **Entry Point**: `streamlit_app.py`
 - **Secrets**: Add your `GEMINI_API_KEY` (from Google AI Studio) to the Cloud Secrets box.
 - **Auto-Sync**: Project is optimized for auto-deployment from Main branch.
+78: 
+79: ### 4. Browser Extension Setup
+80: 1. Ensure the **FastAPI Backend** is running (`python app.py`).
+81: 2. Open Chrome/Edge and navigate to `chrome://extensions`.
+82: 3. Enable **Developer Mode** (top-right toggle).
+83: 4. Click **Load Unpacked**.
+84: 5. Select the `SafeSurf_Extension` folder from this project directory.
+85: 6. Your "Safe-Surf" shield icon will now appear in the toolbar!
 
 ---
 
@@ -84,7 +99,8 @@ python mock_phishing_server.py
   - `utils/` (AI Agent, Advanced Scanners, Search Tools)
 - `templates/` (Premium Cyber-Grok UI)
 - `Network_data/` (Original Datasets)
-- `app.py` (FastAPI Server)
+- `SafeSurf_Extension/` (Chrome/Edge Extension Files)
+88: - `app.py` (FastAPI Server & Extension API)
 
 ---
 **Developed for Advanced Network Security Research 2026**

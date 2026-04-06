@@ -101,7 +101,13 @@ LAYER 3: DYNAMIC RESEARCH SCANNERS (The Investigator)
    - Behavioral Auditor: Scans for suspicious script origins (JS).
    - Visual Quishing Detector: Exposes image-based QR Scams with Zero-text payloads.
    - Routing Tracer: De-obfuscates multi-hop Ephemeral Redirect Chains.
-   - Trusted Host Scanner: Catches compromised domains (like Microsoft/Google) hosting covert phishing forms.
+   - **Trusted Host Scanner**: Catches compromised reputable domains hosting covert phishing forms.
+
+LAYER 4: THE EDGE ENFORCER (The Browser Extension)
+   - Injects real-time intelligence into the browsing session.
+   - Uses JavaScript to capture active tab metadata.
+   - Asynchronous scanning for zero-lag user experience.
+   - Premium UI with live color-coded risk status.
 
 ================================================================================
 3. AI AGENT REASONING ENGINE (v3.2)
@@ -154,15 +160,24 @@ A11: QR Phishing. Attackers hide malicious URLs inside QR codes to evade standar
 Q12: How does Safe-Surf stop Quishing?
 A12: It parses the raw HTML looking for suspicious "Image-to-Text Ratios" (<100 chars but containing visual payloads) to flag visual scams.
 
+Q13: Why does the project use a Browser Extension?
+A13: To bridge the gap between "Static Analysis" and "Live Surfing," 
+     allowing professional real-time security on any URL visited.
+
+Q14: How does the Extension communicate with Python?
+A14: It uses an AJAX-powered REST API bridge. The JS frontend sends 
+     a JSON payload to the FastAPI `/api/v1/analyze` endpoint.
+
 ================================================================================
 5. TECHNICAL DIRECTORY STRUCTURE
 --------------------------------
 - /networksecurity/    -> Core Intelligence Engine
   - utils/             -> AI Agent & Advanced Scanners
   - component/         -> ML Pipeline Components
+- /SafeSurf_Extension/ -> Chrome/Edge Extension Files
 - /templates/          -> Premium "Safe-Surf" UI (Glassmorphism)
 - /Network_data/       -> ML Datasets
-- app.py               -> FastAPI Main Entry Point
+- app.py               -> FastAPI Server & Extension API
 
 ================================================================================
 6. HOW TO RUN & PRESENT (V3.2)
@@ -176,6 +191,11 @@ A12: It parses the raw HTML looking for suspicious "Image-to-Text Ratios" (<100 
    - Push codebase to GitHub.
    - Connect to Streamlit Cloud with `streamlit_app.py` as entry point.
    - Inject `GEMINI_API_KEY` into Cloud Secrets.
+176: 
+177: 3. **Extension Presentation**:
+178:    - Open `chrome://extensions`.
+179:    - Load unpacked: Select `SafeSurf_Extension`.
+180:    - Trigger: Click extension icon on any "Suspect URL" for instant audit.
 
 ================================================================================
 End of Safe-Surf Master Project Guide (V3.2 Upgraded Edition)
