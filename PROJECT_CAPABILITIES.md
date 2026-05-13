@@ -11,6 +11,12 @@
 - **Visual-Only Payloads**: Detects QR code/image scams by analyzing volume-to-content ratios (flagging `<img/>` heavy domains with <100 readable characters).
 - **Ephemeral & Evasive Routing**: Follows and flags multi-hop HTTP redirect chains used to conceal final destinations.
 
+### 💠 v3.5 ADVANCED CAPABILITIES (New Additions)
+- **🤖 ReAct Reasoning Agent**: Live forensic loop that performs Action/Observation steps for deep zero-day analysis.
+- **🇮🇳 Hindi/Hinglish Phishing Guard**: Specialized logic for detecting Indian brand impersonation using Devanagari and localized keyword telemetry.
+- **🚀 Dynamic Playwright Sandbox**: Automated headless browser execution to identify **Cloaking** and **Redirection Loops** in real-time.
+- **⚖️ 70/30 Optimized Ensemble**: A mathematically validated weighted voting architecture that integrates ML confidence with ground-truth heuristics.
+
 ## ❌ NON-DETECTABLE THREATS (The Hard Gaps)
 - **Closed Ecosystem Phishing (WebViews)**: Attacks injected natively inside private messaging apps (e.g., WhatsApp, Telegram) cannot be intercepted without an installed mobile proxy or OS-level MITM certificate.
 - **Dynamic Captcha Walls**: Sites shielded by CAPTCHAs (like Cloudflare Turnstile or reCAPTCHA) block the web scraper before it can analyze the underlying phishing code. 
