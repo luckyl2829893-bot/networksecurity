@@ -46,5 +46,11 @@ The v3.5 core has been specifically stress-tested and hardened against the follo
 - **Analysis Latency**: Deep neural auditing and dynamic sandboxing introduce a 2-8 second delay. This is a deliberate "Precision Trade-off" to ensure Zero False Positives on high-stakes targets.
 - **Hardware Profile**: To utilize the **Local Fallback (Tier 2)** at maximum speed, a system with 8GB+ VRAM is recommended, though the CPU fallback remains functional.
 
+## ⚠️ REMAINING TECHNICAL GAPS (The Disadvantages)
+- **Encrypted Ecosystem Blindspot**: Safe-Surf cannot intercept phishing links *inside* end-to-end encrypted messaging apps (WhatsApp, Signal, Telegram). Protection only triggers once the link is launched in a supported browser environment.
+- **CAPTCHA-Shielded Payloads**: Advanced phishing kits hidden behind Cloudflare "Turnstile" or Google reCAPTCHA v3 will block our automated scanners (Playwright) from reading the malicious source code, necessitating human intervention.
+- **High-Latency Reasoning**: Even with optimization, the "Full ReAct Audit" (WHOIS + SSL + Sandbox) is too slow for "Instant-Block" use cases. It is best used for **Deep Analysis** rather than millisecond-level packet filtering.
+- **Zero-Interaction Malware**: While the system is elite at detecting **Credential Theft (Phishing Forms)**, it is not a replacement for traditional Antivirus in detecting stateless "Drive-by Downloads" that exploit browser-level buffer overflows without a UI.
+
 ---
 *Updated for v3.2.7 Strategic Review.* 🛡️✨
