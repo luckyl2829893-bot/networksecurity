@@ -17,6 +17,18 @@
 - **🚀 Dynamic Playwright Sandbox**: Automated headless browser execution to identify **Cloaking** and **Redirection Loops** in real-time.
 - **⚖️ 70/30 Optimized Ensemble**: A mathematically validated weighted voting architecture that integrates ML confidence with ground-truth heuristics.
 
+### 🛡️ ADVERSARIAL RESILIENCE (Hardened Defense)
+The v3.5 core has been specifically stress-tested and hardened against the following evasion vectors:
+- **Character Substitution (Unicode Spoofing)**: Detects domains using visually identical characters from different alphabets (e.g., 'а' instead of 'a').
+- **Subdomain Abuse (Cloud Hijacking)**: Identifies malicious forms hosted on reputable infrastructure (AWS, Azure, Google Cloud) by analyzing the "Depth of Impersonation."
+- **TLD Swapping & Ephemeral Domains**: Real-time identification of high-risk top-level domains used in short-burst phishing campaigns.
+- **Hyphen & Syntax Obfuscation**: Flags complex hyphenated strings and multi-layered subdomains designed to bypass simple regex filters.
+
+### 🔍 LIVE FORENSIC TELEMETRY
+- **Real-Time WHOIS Audit**: Direct connection to global registrars to verify domain age (detecting "Just-In-Time" phishing infrastructure).
+- **SSL Trust Scoring**: Deep inspection of certificate authority (CA) reputation and transparency logs.
+- **Dynamic Behavioral Analysis**: Headless execution tracking to monitor script behavior before a user even clicks.
+
 ## ❌ NON-DETECTABLE THREATS (The Hard Gaps)
 - **Closed Ecosystem Phishing (WebViews)**: Attacks injected natively inside private messaging apps (e.g., WhatsApp, Telegram) cannot be intercepted without an installed mobile proxy or OS-level MITM certificate.
 - **Dynamic Captcha Walls**: Sites shielded by CAPTCHAs (like Cloudflare Turnstile or reCAPTCHA) block the web scraper before it can analyze the underlying phishing code. 
