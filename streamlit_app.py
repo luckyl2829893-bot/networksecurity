@@ -17,56 +17,10 @@ from networksecurity.utils.advanced_analysis import (
     analyze_open_redirects,
     check_subdomain_takeover
 )
-# Removed external agent import to ensure cloud stability
-# from networksecurity.utils.ai_agent import get_ai_agent_response
-
-# --- SELF-HEALING AI AGENT (V3.1) ---
-class SafeSurfAgent:
-    def __init__(self):
-        self.api_key = (os.getenv("XAI_API_KEY") or os.getenv("GEMINI_API_KEY") or "").strip()
-        
-    def get_analysis(self, query, input_type, risk_score, heuristic_reasons):
-        if not self.api_key:
-            return "⚠️ NO API KEY DETECTED. Connect Gemini in Streamlit Secrets."
-            
-        # --- DYNAMIC DISCOVERY ENGINE (v3.2.5) ---
-        prompt = f"Act as Safe-Surf AI Security Agent. Analyze this {input_type}: {query}. Risk Score: {risk_score}/100. Heuristic Alarms: {heuristic_reasons}. Write a sharp, technical security briefing with a final Verdict and Recommended Action. Use Markdown."
-        payload = {"contents": [{"parts": [{"text": prompt}]}]}
-        
-        # 1. Fetch exactly what this key supports
-        models_to_try = []
-        try:
-            list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={self.api_key}"
-            list_res = requests.get(list_url, timeout=5).json()
-            available = [m['name'].replace('models/', '') for m in list_res.get('models', []) 
-                        if 'generateContent' in m.get('supportedGenerationMethods', [])]
-            
-            # Prioritize newest flash models
-            priority = ["2.5-flash", "2.0-flash", "1.5-flash", "1.5-pro", "pro"]
-            for p in priority:
-                for a in available:
-                    if p in a.lower():
-                        models_to_try.append(a)
-            
-            # Add everything else as fallback
-            models_to_try.extend([m for m in available if m not in models_to_try])
-        except:
-            models_to_try = ["gemini-1.5-flash", "gemini-pro"]
-
-        last_error = ""
-        # 2. Try the discovered models
-        for model in models_to_try[:8]: # Try top 8 candidates
-            for version in ["v1beta", "v1"]:
-                url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={self.api_key}"
-                try:
-                    res = requests.post(url, json=payload, timeout=10)
-                    if res.status_code == 200:
-                        return res.json()['candidates'][0]['content']['parts'][0]['text']
-                    last_error = f"{version}/{model} ({res.status_code})"
-                except:
-                    continue
-        
-        return f"⚠️ [Safe-Surf Node Error]: Dynamic discovery failed. Final attempt: {last_error}"
+from networksecurity.utils.ai_agent import get_ai_agent_response
+from networksecurity.utils.whitelist_manager import whitelist_manager
+from networksecurity.utils.hindi_detector import hindi_detector
+from networksecurity.utils.dynamic_scanner import run_dynamic_scan
 
 # Set Page Config
 st.set_page_config(
@@ -116,11 +70,39 @@ def perform_scan(query):
         heuristic_score += 70
         heuristic_reasons.extend(subdomain_analysis["details"])
     
-    total_risk_score = min(db_score + heuristic_score, 100)
+    # Priority 6: Hindi Phishing Detection
+    hindi_results = hindi_detector.detect(query)
+    if hindi_results["detected"]:
+        heuristic_score += hindi_results["score_boost"]
+        heuristic_reasons.extend(hindi_results["reasons"])
+    
+    # Priority 4: Whitelist Adjustment
+    is_trusted = whitelist_manager.is_whitelisted(query)
+    
+    total_risk_score = heuristic_score
+    if is_trusted:
+        total_risk_score = int(total_risk_score * 0.2)
+        heuristic_reasons.append("✅ Verified Domain (Tranco Top 100k)")
+
+    # Priority 5: Dynamic Sandbox Scan
+    dynamic_results = None
+    if total_risk_score > 30:
+        with st.status("🚀 Launching Playwright Sandbox...", expanded=False):
+            dynamic_results = run_dynamic_scan(query)
+            if dynamic_results["status"] == "success":
+                if dynamic_results["detected_cloaking"]:
+                    total_risk_score = 100
+                    heuristic_reasons.append("🚨 CLOAKING DETECTED: Initial domain differs from final destination.")
+                
+                # Check dynamic content for Hindi phishing
+                dynamic_hindi = hindi_detector.detect(query, dynamic_results["page_content"])
+                if dynamic_hindi["detected"]:
+                    total_risk_score = min(total_risk_score + dynamic_hindi["score_boost"], 100)
+                    heuristic_reasons.extend(dynamic_hindi["reasons"])
     
     # AI Agent Report (Safe-Surf-style)
-    agent = SafeSurfAgent()
-    security_brief = agent.get_analysis(query, input_type, total_risk_score, heuristic_reasons)
+    ai_response = get_ai_agent_response(query, input_type, total_risk_score, heuristic_reasons, {})
+    
     confidence = 100 - (total_risk_score // 5) if total_risk_score < 50 else 95
     
     return {
@@ -129,7 +111,11 @@ def perform_scan(query):
         "risk_score": total_risk_score,
         "results": results,
         "heuristic_reasons": heuristic_reasons,
-        "security_brief": security_brief,
+        "security_brief": ai_response["analysis"],
+        "model_used": ai_response["model_used"],
+        "tier": ai_response["tier"],
+        "is_trusted": is_trusted,
+        "dynamic_scan": dynamic_results,
         "confidence": confidence
     }
 
@@ -167,16 +153,21 @@ if st.session_state.scan_results:
         st.markdown("### 🤖 Safe-Surf Intelligence Report\n\n")
         st.metric("Risk Score", f"{res['risk_score']}/100", delta="- Malicious" if res['risk_score'] > 50 else "Safe")
         st.metric("Confidence", f"{res['confidence']}%")
+        
+        if res.get("is_trusted"):
+            st.success("💎 TRUSTED DOMAIN: Found in Tranco Top 100k.")
+            
         st.write("**Anomalies Detected:**")
         for r in res['heuristic_reasons']:
             st.error(r)
 
     # Main Stage
     st.subheader("Neural Briefing")
+    st.info(f"🤖 Analyzed by: **{res['model_used']}** | Tier: **{res['tier']}**")
     st.markdown(res['security_brief'])
     
     # Detailed Tabs
-    tab1, tab2, tab3 = st.tabs(["Risk Architecture", "Registry Feed", "Fingerprint"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["Risk Architecture", "Registry Feed", "Fingerprint", "Dynamic Sandbox", "Explainability"])
     
     with tab1:
         st.write("### Risk Breakdown")
@@ -193,6 +184,35 @@ if st.session_state.scan_results:
     with tab3:
         st.write("### System Fingerprint")
         st.code(f"UIDX-{hash(res['query']) % 1000000}-TGT\nTYPE: {res['input_type'].upper()}")
+
+    with tab4:
+        st.write("### 🚀 Playwright Dynamic Sandbox")
+        if res.get("dynamic_scan"):
+            ds = res["dynamic_scan"]
+            if ds["status"] == "success":
+                st.success("Analysis Complete")
+                st.write(f"**Final Destination:** `{ds['final_url']}`")
+                st.write(f"**Page Title:** {ds['page_title']}")
+                if ds["detected_cloaking"]:
+                    st.error("⚠️ CLOAKING/REDIRECTION LOOP DETECTED")
+            else:
+                st.error(f"Sandbox Error: {ds['error']}")
+        else:
+            st.info("Dynamic scan only triggers for high-risk targets (>30%).")
+
+    with tab5:
+        st.write("### AI Model Explainability (SHAP)")
+        st.info("These plots explain exactly how the Machine Learning model reached its conclusion based on the extracted features.")
+        
+        summary_path = os.path.join("Artifacts", "Explainability", "shap_summary_plot.png")
+        if os.path.exists(summary_path):
+            st.image(summary_path, caption="Global Feature Importance (SHAP Summary)")
+        else:
+            st.warning("SHAP Summary Plot not found. Please trigger a model retrain.")
+            
+        waterfall_path = os.path.join("Artifacts", "Explainability", "shap_waterfall_plot.png")
+        if os.path.exists(waterfall_path):
+            st.image(waterfall_path, caption="Local Instance Analysis (SHAP Waterfall)")
 
 else:
     st.info("Enter a URL and click 'RUN SCAN' to initiate intelligence gathering.")

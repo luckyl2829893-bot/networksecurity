@@ -1,0 +1,27 @@
+Metadata-Version: 2.4
+Name: NetworkSecurity
+Version: 0.0.1
+Author: Lakshya Sharma
+Author-email: luckyl2829893@gmail.com
+Requires-Dist: python-dotenv
+Requires-Dist: pandas
+Requires-Dist: pymongo
+Requires-Dist: numpy<2.0.0
+Requires-Dist: certifi
+Requires-Dist: fastapi
+Requires-Dist: scikit-learn
+Requires-Dist: uvicorn
+Requires-Dist: python-multipart
+Requires-Dist: requests
+Requires-Dist: beautifulsoup4
+Requires-Dist: python-whois
+Requires-Dist: dnspython
+Requires-Dist: streamlit>=1.35.0
+Requires-Dist: jinja2
+Requires-Dist: markupsafe
+Requires-Dist: setuptools
+Requires-Dist: altair<5
+Requires-Dist: mlflow
+Dynamic: author
+Dynamic: author-email
+Dynamic: requires-dist

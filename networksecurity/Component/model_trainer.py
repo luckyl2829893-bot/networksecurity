@@ -99,33 +99,124 @@ class ModelTrainer:
             models=models, param=params
         )
 
+        if not model_report:
+            raise Exception("No model evaluation results found. Check evaluate_models in utils.py")
+
         ## To get best model score from dict by F1 score
         best_model_score = max(metrics["f1"] for metrics in model_report.values())
 
         ## To get best model name from dict
-        best_model_name = [
+        best_model_names = [
             name for name, metrics in model_report.items() if metrics["f1"] == best_model_score
-        ][0]
-
+        ]
+        
+        if not best_model_names:
+            raise Exception("Could not identify a best model from the evaluation report.")
+            
+        best_model_name = best_model_names[0]
         best_model = models[best_model_name]
+        
         y_train_pred = best_model.predict(X_train)
-
         classification_train_metric = get_classification_score(y_true=y_train, y_pred=y_train_pred)
-
-        ## Track the experiments with mlflow (Train Metrics + Model Logging)
-        # This will create one run with train metrics and the model artifact.
-        self.track_mlflow(best_model, classification_train_metric) 
-
+        
         y_test_pred = best_model.predict(x_test)
         classification_test_metric = get_classification_score(y_true=y_test, y_pred=y_test_pred)
 
-        ## Track the experiments with mlflow (Test Metrics Only)
-        # We use a SEPARATE run to log test metrics for the same model.
-        # This is optional, but common practice to separate train/test data.
-        with mlflow.start_run():
-            mlflow.log_metric("test_f1_score", classification_test_metric.f1_score)
-            mlflow.log_metric("test_precision", classification_test_metric.precision_score)
-            mlflow.log_metric("test_recall_score", classification_test_metric.recall_score)
+        ## Track the experiments with mlflow
+        try:
+            print("Debug : Logging metrics and model to MLflow/DagsHub...")
+            with mlflow.start_run() as run:
+                # Log Train Metrics
+                mlflow.log_metric("train_f1_score", classification_train_metric.f1_score)
+                mlflow.log_metric("train_precision", classification_train_metric.precision_score)
+                mlflow.log_metric("train_recall", classification_train_metric.recall_score)
+                
+                # Log Test Metrics
+                mlflow.log_metric("test_f1_score", classification_test_metric.f1_score)
+                mlflow.log_metric("test_precision", classification_test_metric.precision_score)
+                mlflow.log_metric("test_recall", classification_test_metric.recall_score)
+                
+                # Log the best model
+                mlflow.sklearn.log_model(sk_model=best_model, artifact_path="model_artifact")
+                print(f"Successfully logged to DagsHub Run ID: {run.info.run_id}")
+        except Exception as e:
+            print(f"--- [MLflow Warning] Failed to log to DagsHub: {e} ---")
+
+        # ------------------- SHAP Explainability -----------------------
+        try:
+            import shap
+            import matplotlib.pyplot as plt
+            import numpy as np
+
+            print("Generating SHAP Explainability Plots...")
+            explain_dir = os.path.join("Artifacts", "Explainability")
+            os.makedirs(explain_dir, exist_ok=True)
+
+            # Using a generic Explainer or selecting based on model type
+            if "Forest" in str(type(best_model)) or "Tree" in str(type(best_model)) or "Boosting" in str(type(best_model)):
+                explainer = shap.TreeExplainer(best_model)
+            elif "Logistic" in str(type(best_model)) or "Linear" in str(type(best_model)):
+                explainer = shap.LinearExplainer(best_model, x_test)
+            else:
+                explainer = shap.Explainer(best_model, x_test)
+                
+            shap_values = explainer.shap_values(x_test)
+            
+            # Define feature names for better plots
+            feature_names = [
+                "having_IP_Address","URL_Length","Shortining_Service","having_At_Symbol","double_slash_redirecting",
+                "Prefix_Suffix","having_Sub_Domain","SSLfinal_State","Domain_registeration_length","Favicon",
+                "port","HTTPS_token","Request_URL","URL_of_Anchor","Links_in_tags","SFH","Submitting_to_email",
+                "Abnormal_URL","Redirect","on_mouseover","RightClick","popUpWidnow","Iframe","age_of_domain",
+                "DNSRecord","web_traffic","Page_Rank","Google_Index","Links_pointing_to_page","Statistical_report"
+            ]
+            
+            # Handle different SHAP output formats (list for multi-class/binary or array)
+            if isinstance(shap_values, list):
+                # Usually [class0_vals, class1_vals]
+                shap_vals_to_plot = shap_values[1]
+                expected_value = explainer.expected_value[1]
+            elif len(shap_values.shape) == 3:
+                # Shape (N, features, classes) -> take class 1
+                shap_vals_to_plot = shap_values[:, :, 1]
+                expected_value = explainer.expected_value[1]
+            else:
+                shap_vals_to_plot = shap_values
+                expected_value = explainer.expected_value
+
+            # 1. Summary Plot (Global Explainability)
+            plt.figure(figsize=(10, 6))
+            shap.summary_plot(shap_vals_to_plot, x_test, feature_names=feature_names, show=False)
+            plt.tight_layout()
+            summary_path = os.path.join(explain_dir, "shap_summary_plot.png")
+            plt.savefig(summary_path, bbox_inches='tight', dpi=300)
+            plt.close()
+            print(f"SHAP Summary Plot saved to {summary_path}")
+
+            # 2. Waterfall Plot for a single instance (Local Explainability)
+            plt.figure(figsize=(12, 8))
+            
+            # Ensure values are 1D (features,)
+            instance_vals = shap_vals_to_plot[0]
+            if len(instance_vals.shape) > 1:
+                instance_vals = instance_vals[:, 1] # Fallback if still 2D
+                
+            # Create a SHAP Explanation object for the waterfall plot
+            explanation = shap.Explanation(
+                values=instance_vals, 
+                base_values=expected_value, 
+                data=x_test[0],
+                feature_names=feature_names
+            )
+            shap.waterfall_plot(explanation, show=False)
+            plt.tight_layout()
+            waterfall_path = os.path.join(explain_dir, "shap_waterfall_plot.png")
+            plt.savefig(waterfall_path, bbox_inches='tight', dpi=300)
+            plt.close()
+            print(f"SHAP Waterfall Plot saved to {waterfall_path}")
+            
+        except Exception as e:
+            print(f"Error generating SHAP plots: {e}")
 
         # ------------------- Local Model Persistence -------------------
         preprocessor = load_object(file_path=self.data_transformation_artifact.transformed_object_file_path)

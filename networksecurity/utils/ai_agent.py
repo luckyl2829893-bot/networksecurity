@@ -1,203 +1,163 @@
-import random
 import os
 import requests
 import json
+import whois
+import ssl
+import socket
+from datetime import datetime
+from networksecurity.utils.dynamic_scanner import run_dynamic_scan
 
 class PhishingAIAgent:
     """
-    A sophisticated AI Security Agent that provides deep, reasoning-based analysis 
-    of phishing threats. Supports Gemini, Grok, and OpenAI.
+    A resilient 4-tier AI Security Agent for Safe-Surf v4.0.
+    Fallback Chain: Tier 1 (Gemini) -> Tier 2 (Llama 3.1) -> Tier 3 (Phi-3) -> Tier 4 (Rules)
     """
     
     def __init__(self, personality="CyberAnalyst"):
         self.personality = personality
-        # Check for XAI (Grok) or OpenAI/Gemini keys
-        self.api_key = (os.getenv("XAI_API_KEY") or os.getenv("GROK_API_KEY") or os.getenv("GEMINI_API_KEY") or "").strip()
-        
-        if self.api_key and self.api_key.startswith("AIza"):
-            self.provider = "gemini"
-            print(f"--- [Safe-Surf Node] Localhost: INITIALIZED Gemini v3.2.3 (Key: {len(self.api_key)} chars) ---")
-        else:
-            self.api_url = "https://api.x.ai/v1/chat/completions"
-            self.provider = "openai"
-            self.model = "grok-2"
-            print(f"--- [Safe-Surf Node] Localhost: INITIALIZED Grok/OpenAI (Key: {len(self.api_key)} chars) ---")
+        self.gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
+        self.ollama_url = "http://localhost:11434/api/generate"
 
-    def _get_intro(self, risk_score):
-        if risk_score > 80:
-            return random.choice([
-                "SYSTEM ALERT: High-level malicious activity detected. Let me break down this attack for you.",
-                "Analyzing threat vectors... This looks like a multi-stage phishing attempt. Here's my intelligence report.",
-                "CRITICAL: Found strong evidence of brand impersonation and identity theft. Initiating deep dive..."
-            ])
-        elif risk_score > 40:
-            return random.choice([
-                "Scanning patterns... I've identified several suspicious markers. Exercise caution.",
-                "Preliminary analysis complete. The indicators point to a potential phishing setup.",
-                "Heuristic evaluation suggests this URL is atypical. Here are the red flags I've found."
-            ])
-        else:
-            return "Scan complete. No significant malicious patterns detected in my current baseline."
+    def _check_domain_age(self, domain):
+        """Live WHOIS tool."""
+        try:
+            w = whois.whois(domain)
+            creation_date = w.creation_date
+            if isinstance(creation_date, list):
+                creation_date = creation_date[0]
+            if creation_date:
+                days_old = (datetime.now() - creation_date).days
+                return f"Domain is {days_old} days old (Created: {creation_date})."
+            return "Domain age unknown (WHOIS privacy enabled or no record)."
+        except:
+            return "WHOIS lookup failed."
+
+    def _check_ssl_certificate(self, domain):
+        """Live SSL tool."""
+        try:
+            ctx = ssl.create_default_context()
+            with ctx.wrap_socket(socket.socket(), server_hostname=domain) as s:
+                s.settimeout(5)
+                s.connect((domain, 443))
+                cert = s.getpeercert()
+                subject = dict(x[0] for x in cert['subject'])
+                issuer = dict(x[0] for x in cert['issuer'])
+                return f"SSL Verified. Issued to: {subject.get('commonName')} by {issuer.get('commonName')}."
+        except Exception as e:
+            return f"SSL Verification Failed: {str(e)}"
+
+    def _scan_page_content(self, url):
+        """Live Dynamic Content tool."""
+        res = run_dynamic_scan(url)
+        if res["status"] == "success":
+            return f"Final URL: {res['final_url']} | Title: {res['page_title']} | Content Snippet: {res['page_content'][:500]}..."
+        return f"Scan failed: {res['error']}"
 
     def generate_detailed_analysis(self, query, input_type, risk_score, heuristic_reasons, db_results):
         """
-        Main entry point. Calls REAL API if key exists, else falling back to simulation.
+        Executes the 4-tier fallback chain with ReAct tools.
         """
-        if self.api_key:
-            return self._fetch_real_llm_analysis(query, input_type, risk_score, heuristic_reasons, db_results)
+        domain = query.split("//")[-1].split("/")[0]
         
-        return self._generate_simulated_analysis(query, input_type, risk_score, heuristic_reasons, db_results)
+        # Priority 7: Real-time Tool Execution
+        live_intel = {
+            "domain_age": self._check_domain_age(domain),
+            "ssl_info": self._check_ssl_certificate(domain),
+            "dynamic_intel": self._scan_page_content(query) if risk_score > 20 else "Skipped for low risk."
+        }
+        
+        prompt = self._build_prompt(query, input_type, risk_score, heuristic_reasons, db_results, live_intel)
+        
+        # Tier 1: Gemini
+        if self.gemini_key:
+            analysis = self._call_gemini_tier(prompt)
+            if analysis:
+                return {"analysis": analysis, "model_used": "Gemini 1.5 Flash", "tier": 1}
 
-    def _fetch_real_llm_analysis(self, query, input_type, risk_score, heuristic_reasons, db_results):
-        """
-        Calls the REAL X.ai (Grok) or OpenAI API with the security research data.
-        """
-        prompt = f"""
+        # Tier 2: Llama 3.1 8B (Local Ollama)
+        analysis = self._call_ollama_tier("llama3.1:8b", prompt)
+        if analysis:
+            return {"analysis": analysis, "model_used": "Llama 3.1 (8B)", "tier": 2}
+
+        # Tier 3: Phi-3 Mini (Local Ollama)
+        analysis = self._call_ollama_tier("phi3:mini", prompt)
+        if analysis:
+            return {"analysis": analysis, "model_used": "Phi-3 Mini", "tier": 3}
+
+        # Tier 4: Rule-based Fallback
+        analysis = self._call_rule_based_tier(query, input_type, risk_score, heuristic_reasons, db_results)
+        return {"analysis": analysis, "model_used": "Rule-based Engine", "tier": 4}
+
+    def _build_prompt(self, query, input_type, risk_score, heuristic_reasons, db_results, live_intel):
+        return f"""
         Act as a senior Cyber Security Intelligence Agent (Agent Safe-Surf). 
-        I have found a suspicious {input_type} target: '{query}'.
+        Target: '{query}' ({input_type}).
         
-        TECHNICAL DATA FOUND BY OUR SCANNERS:
-        - Risk Score: {risk_score}/100
+        STATIC SCORING DATA:
+        - ML Risk Score: {risk_score}/100
         - Heuristic Alarms: {', '.join(heuristic_reasons) if heuristic_reasons else 'None'}
         - Database Matches: {list(db_results.keys()) if db_results else 'None'}
         
+        LIVE RE-ACT INTEL (Real-time checks):
+        - WHOIS Data: {live_intel['domain_age']}
+        - SSL Certificate: {live_intel['ssl_info']}
+        - Dynamic Browser Scan: {live_intel['dynamic_intel']}
+        
         TASK:
-        Write a detailed, sharp, and reasoning-based security briefing (Safe-Surf-style).
-        1. Break down the specific attack vector (e.g., Homograph, Brand Spoofing, Data Exfiltration).
-        2. Explain WHY it is dangerous in 2-3 technical bullets.
-        3. Give a final 'Verdict' and immediate 'Action' for the user.
+        Provide a sharp, reasoning-based security briefing using BOTH static and live data.
+        1. Break down the attack vector (e.g. Brand Spoofing, Data Exfiltration).
+        2. 2-3 technical bullets on danger.
+        3. Final Verdict and Action.
         
-        Tone: Brilliant, slightly edgy, cybersecurity expert. Use Markdown (bold, headers) for structure.
+        Tone: Brilliant, cybersecurity expert. Use Markdown.
         """
 
+    def _call_gemini_tier(self, prompt):
         try:
-            if self.provider == "gemini":
-                # --- DYNAMIC DISCOVERY ENGINE (v3.2.5 Sync) ---
-                gemini_data = {"contents": [{"parts": [{"text": prompt}]}]}
-                
-                # 1. Fetch exactly what this key supports
-                models_to_try = []
-                try:
-                    list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={self.api_key}"
-                    list_res = requests.get(list_url, timeout=5).json()
-                    available = [m['name'].replace('models/', '') for m in list_res.get('models', []) 
-                                if 'generateContent' in m.get('supportedGenerationMethods', [])]
-                    
-                    priority = ["2.5-flash", "2.0-flash", "1.5-flash", "1.5-pro", "pro"]
-                    for p in priority:
-                        for a in available:
-                            if p in a.lower():
-                                models_to_try.append(a)
-                    
-                    models_to_try.extend([m for m in available if m not in models_to_try])
-                except:
-                    models_to_try = ["gemini-1.5-flash", "gemini-pro"]
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={self.gemini_key}"
+            data = {"contents": [{"parts": [{"text": prompt}]}]}
+            res = requests.post(url, json=data, timeout=10)
+            if res.status_code == 200:
+                return res.json()['candidates'][0]['content']['parts'][0]['text']
+        except:
+            pass
+        return None
 
-                last_err = ""
-                # 2. Try the discovered models
-                for model in models_to_try[:8]:
-                    for version in ["v1beta", "v1"]:
-                        url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={self.api_key}"
-                        try:
-                            # Short timeout for fast skipping
-                            res = requests.post(url, json=gemini_data, timeout=8)
-                            if res.status_code == 200:
-                                print(f"--- [Safe-Surf Node] Gemini Success: {version}/{model} ---")
-                                return res.json()['candidates'][0]['content']['parts'][0]['text']
-                            last_err = f"{version}/{model} ({res.status_code})"
-                        except Exception as e:
-                            last_err = f"NetErr ({str(e)[:20]})"
-                            continue
-                
-                # If we get here, log the total failure
-                print(f"--- [Safe-Surf Node] FATAL: Dynamic discovery failed. Last: {last_err} ---")
-                return f"⚠️ [Safe-Surf Node: 404] Dynamic discovery failed. Last: {last_err}\n\n" + \
-                       self._generate_simulated_analysis(query, input_type, risk_score, heuristic_reasons, db_results)
+    def _call_ollama_tier(self, model_name, prompt):
+        try:
+            data = {
+                "model": model_name,
+                "prompt": prompt,
+                "stream": False
+            }
+            res = requests.post(self.ollama_url, json=data, timeout=30)
+            if res.status_code == 200:
+                return res.json().get("response")
+        except:
+            pass
+        return None
 
-            else:
-                # Standard OpenAI/Grok Format
-                headers = {
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {self.api_key}"
-                }
-                data = {
-                    "model": self.model,
-                    "messages": [
-                        {"role": "system", "content": "You are a world-class cybersecurity AI agent named Safe-Surf."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    "stream": False
-                }
-                
-                response = requests.post(self.api_url, headers=headers, json=data, timeout=12)
-                if response.status_code == 200:
-                    result = response.json()
-                    return result['choices'][0]['message']['content']
-                else:
-                    err_msg = response.text[:150]
-                    return f"⚠️ [Safe-Surf Node: {response.status_code}] {err_msg}...\n\n" + \
-                           self._generate_simulated_analysis(query, input_type, risk_score, heuristic_reasons, db_results)
-                
-        except Exception as e:
-            return f"⚠️ [Local Failover: {str(e)[:50]}]\n\n" + \
-                   self._generate_simulated_analysis(query, input_type, risk_score, heuristic_reasons, db_results)
-
-    def _generate_simulated_analysis(self, query, input_type, risk_score, heuristic_reasons, db_results):
-        """
-        High-quality simulation fallback.
-        """
-        if risk_score < 20:
-            return self._get_intro(risk_score)
-
-        # Build the 'Reasoning' sections
-        analysis = f"### 🤖 Safe-Surf Intelligence Report\n\n"
-        analysis += f"{self._get_intro(risk_score)}\n\n"
+    def _call_rule_based_tier(self, query, input_type, risk_score, heuristic_reasons, db_results):
+        analysis = f"### 🤖 Safe-Surf Intelligence Report (Rule-based)\n\n"
+        analysis += f"Risk Level: **{risk_score}/100**\n\n"
+        analysis += "#### 🔍 Automated Findings:\n"
         
-        analysis += "#### 🔍 Investigation Log:\n"
-        
-        # 1. Structural Analysis
-        analysis += f"1. **Infrastructure**: Analyzing the `{input_type}` target. "
+        if heuristic_reasons:
+            analysis += f"Our scanners identified several red flags: {', '.join(heuristic_reasons)}.\n"
+        else:
+            analysis += "No critical heuristic alarms triggered, but base ML risk remains present.\n"
+            
         if db_results:
-            analysis += "Historical data confirms this entity is already flagged in global malicious blacklists. "
-        else:
-            analysis += "No prior history in static blacklists, suggesting a zero-day or recycled attack vector. "
+            analysis += f"CRITICAL: The target matches known malicious signatures in our database.\n"
             
-        # 2. Heuristic Deep Dive
-        analysis += "\n2. **Threat Markers**: "
-        reasons_text = []
-        for reason in heuristic_reasons:
-            if "Homograph" in reason:
-                reasons_text.append("detected a **Homograph (Punycode)** attack using invisible character spoofing")
-            elif "Brand" in reason:
-                reasons_text.append("identified **Brand Impersonation** (using unofficial domains)")
-            elif "EXTERNAL domain" in reason:
-                reasons_text.append("found hidden **Data Exfiltration** code")
-            elif "VERY NEW" in reason:
-                reasons_text.append("flagged a **Newly Registered Domain** (<30 days)")
-            elif "Open Redirect" in reason:
-                reasons_text.append("detected an **Open Redirect tunnel**")
-            else:
-                reasons_text.append(f"identified {reason.lower()}")
-        
-        if reasons_text:
-            analysis += "Our scanners " + ", and I have ".join(reasons_text) + ". "
-        
-        # 3. Risk Assessment
-        analysis += f"\n3. **Final Verdict**: With a risk score of **{risk_score}/100**, this is a "
-        if risk_score > 80:
-            analysis += "Highly Dangerous threat. This site is specifically designed for credential harvesting."
-        else:
-            analysis += "Suspicious entity. It displays patterns commonly associated with social engineering."
-            
-        analysis += "\n\n#### 🆘 Recommended Action:\n"
+        analysis += "\n#### 🆘 Recommended Action:\n"
         if risk_score > 60:
-            analysis += "🛑 **IMMEDIATE ACTION**: Close the tab. Do not input credentials. Report this to security."
+            analysis += "🛑 **IMMEDIATE ACTION**: Do not interact. This target shows high-confidence phishing patterns."
         else:
-            analysis += "⚠️ **CAUTION**: Site shows unconventional patterns. Verify the source manually."
+            analysis += "⚠️ **CAUTION**: Exercise standard security protocols."
             
         return analysis
 
-# Placeholder for real LLM integration
 def get_ai_agent_response(query, input_type, risk_score, heuristic_reasons, db_results):
     agent = PhishingAIAgent()
     return agent.generate_detailed_analysis(query, input_type, risk_score, heuristic_reasons, db_results)

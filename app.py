@@ -1,13 +1,14 @@
 import os
 import sys
 import pandas as pd
-from fastapi import FastAPI, File, UploadFile, Request
+from fastapi import FastAPI, File, UploadFile, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import Response, HTMLResponse
+from fastapi.templating import Jinja2Templates
 from starlette.responses import RedirectResponse
 import uvicorn
 from dotenv import load_dotenv
-from fastapi.templating import Jinja2Templates
+from urllib.parse import urlparse
 
 # Load environment variables (Localhost support)
 load_dotenv()
@@ -25,7 +26,6 @@ from networksecurity.utils.advanced_analysis import (
     check_subdomain_takeover
 )
 from networksecurity.utils.ai_agent import get_ai_agent_response
-
 
 import certifi
 try:
@@ -247,15 +247,15 @@ async def predict_route(request: Request,file: UploadFile = File(...)):
         df['predicted_column'] = y_pred
         df.to_csv('prediction_output/output.csv')
         table_html = df.to_html(classes='table table-striped')
-        return Response(table_html)
+        return HTMLResponse(content=table_html)
     except Exception as e:
         raise NetworkSecurityException(e,sys)
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Use reload=True and pass app as string for improved development experience
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
 
-
-
-
-
-#python -m uvicorn main:app --reload
+# To run this server, use:
+# python app.py
+# OR
+# python -m uvicorn app:app --reload

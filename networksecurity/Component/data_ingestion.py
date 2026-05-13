@@ -28,23 +28,24 @@ class DataIngestion:
         
     def export_collection_as_dataframe(self):
         """
-        Read data from mongodb
+        Read data from local csv for real-world retraining (PhishTank + Tranco)
+        to ensure proper logging to MLflow and DagsHub without overfitting.
         """
         try:
-            import certifi
-            database_name=self.data_ingestion_config.database_name
-            collection_name=self.data_ingestion_config.collection_name
-            self.mongo_client=pymongo.MongoClient(MONGO_DB_URL, tlsCAFile=certifi.where())
-            collection=self.mongo_client[database_name][collection_name]
-
-            df=pd.DataFrame(list(collection.find()))
+            import os
+            local_path = "Network_data/real_phishing_data.csv"
+            if not os.path.exists(local_path):
+                # Fallback to original dataset if the real one isn't built yet
+                local_path = "Network_data/phisingData.csv"
+                
+            df = pd.read_csv(local_path)
             if "_id" in df.columns.to_list():
-                df=df.drop(columns=["_id"],axis=1)
+                df = df.drop(columns=["_id"], axis=1)
             
-            df.replace({"na":np.nan},inplace=True)
+            df.replace({"na": np.nan}, inplace=True)
             return df
         except Exception as e:
-            raise NetworkSecurityException(e,sys)
+            raise NetworkSecurityException(e, sys)
         
     def export_data_into_feature_store(self,dataframe: pd.DataFrame):
         try:
@@ -99,4 +100,4 @@ class DataIngestion:
             return dataingestionartifact
 
         except Exception as e:
-            raise NetworkSecurityException
+            raise NetworkSecurityException(e, sys)

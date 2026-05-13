@@ -20,9 +20,9 @@ def get_requirements()->List[str]:
             lines=file.readlines()
             ## Process each line
             for line in lines:
-                requirement=line.strip()
+                requirement = line.split('#')[0].strip()
                 ## ignore empty lines and -e .
-                if requirement and requirement!= '-e .':
+                if requirement and requirement != '-e .':
                     requirement_lst.append(requirement)
     except FileNotFoundError:
         print("requirements.txt file not found")
