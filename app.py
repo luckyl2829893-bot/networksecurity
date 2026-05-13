@@ -26,6 +26,7 @@ from networksecurity.utils.advanced_analysis import (
     check_subdomain_takeover
 )
 from networksecurity.utils.ai_agent import get_ai_agent_response
+from networksecurity.utils.main_utils.utils import load_object
 
 import certifi
 try:
@@ -242,7 +243,17 @@ async def predict_route(request: Request,file: UploadFile = File(...)):
     try:
         df=pd.read_csv(file.file)
         final_model_dir='final_model'
-        network_model = NetworkModel(model_dir=final_model_dir)
+        
+        # Load model and preprocessor objects
+        model_path = os.path.join(final_model_dir, "model.pkl")
+        preprocessor_path = os.path.join(final_model_dir, "preprocessor.pkl")
+        
+        model = load_object(model_path)
+        preprocessor = load_object(preprocessor_path)
+        
+        # Initialize NetworkModel with objects
+        network_model = NetworkModel(preprocessor=preprocessor, model=model)
+        
         y_pred = network_model.predict(df)
         df['predicted_column'] = y_pred
         df.to_csv('prediction_output/output.csv')
