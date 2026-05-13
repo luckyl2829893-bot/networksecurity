@@ -1,31 +1,31 @@
-# Safe-Surf v3.2.7 | Technical Capabilities & Constraints
+# Safe-Surf v3.5 | Technical Capabilities & Product Constraints
 
-## 🛡️ DETECTABLE THREATS (The Strengths)
-- **Known Malicious Entities**: Instant identification via MongoDB/Registry matches.
-- **Typosquatting & Brand Spoofing**: Detects look-alike domains (e.g., `faceb00k.com`).
-- **Homograph (Punycode) Attacks**: Flags spoofed characters (e.g., `xn--`).
-- **Zero-Day Gibberish (Entropy Shield)**: Identifies computer-generated DGA domains (e.g., `aabbajaabadaaba.org`).
-- **Heuristic Indicators**: Flags newly registered domains, suspicious TLDs, and path keywords.
-- **Infrastructure Vulnerabilities**: Detects Open Redirects, Subdomain Takeovers, and missing `X-Frame-Options`.
-- **Compromised Trusted Domains**: Analyzes reputable sites (e.g., `medium.com`, `docs.google.com`) for unexpected password fields or high-risk "session verification" keywords.
-- **Visual-Only Payloads**: Detects QR code/image scams by analyzing volume-to-content ratios (flagging `<img/>` heavy domains with <100 readable characters).
-- **Ephemeral & Evasive Routing**: Follows and flags multi-hop HTTP redirect chains used to conceal final destinations.
+Safe-Surf is an advanced Cyber-Intelligence product designed for real-time threat detection and mitigation.
 
-## ❌ NON-DETECTABLE THREATS (The Hard Gaps)
-- **Closed Ecosystem Phishing (WebViews)**: Attacks injected natively inside private messaging apps (e.g., WhatsApp, Telegram) cannot be intercepted without an installed mobile proxy or OS-level MITM certificate.
-- **Dynamic Captcha Walls**: Sites shielded by CAPTCHAs (like Cloudflare Turnstile or reCAPTCHA) block the web scraper before it can analyze the underlying phishing code. 
-- **Deep Code Obfuscation (Stateless Limits)**: Heavily obfuscated dynamic JavaScript payloads (like delayed malware execution) cannot be detected without a full dynamic execution sandbox (VM emulation).
+## 🛡️ DETECTABLE THREATS (Core Strengths)
+- **AI-Powered Evasion Detection**: Uses a **ReAct Reasoning Loop** to detect sophisticated phishing that bypasses standard filters.
+- **Zero-Day Hindi Phishing**: Specialized detection for Hinglish and Indian brand impersonation (UPI scams, Aadhaar spoofing).
+- **Cloaking & Redirection Loops**: Identifies hidden malicious tunnels and domains that show different content to security crawlers.
+- **Dynamic Content Audit**: Real-time analysis of form targets and external data harvesting scripts.
+- **Infrastructure Forensic**: Live WHOIS registration age checks and SSL certificate chain validation.
+- **Typosquatting & Brand Spoofing**: Detects look-alike domains and Homograph (Punycode) attacks.
+- **Compromised Trusted Domains**: Scans reputable sites for injected malicious payloads or unauthorized login forms.
 
-## 🚀 CORE FEATURES (The Pros)
-- **Neural Security Intelligence**: Reasoning-based reports powered by Gemini 2.0/2.5.
-- **Self-Healing Model Discovery**: Dynamic API handshake to ensure maximum AI uptime.
-- **Deep Heuristic Page Scraper**: Parses DOM structures in real-time for zero-day threat analysis.
-- **High-Performance Dashboard**: Dual-layer architecture (FastAPI + Streamlit).
+## ❌ LIMITATIONS (The Hard Gaps)
+- **Closed Ecosystem Phishing**: Attacks inside encrypted messaging apps (WhatsApp/Telegram) cannot be intercepted without device-level integration.
+- **Bot-Detection Shields**: Sites protected by advanced CAPTCHAs (Cloudflare/reCAPTCHA) may block deep scanning.
+- **Hardware Dependency**: Local AI fallback requires modern hardware (GPU recommended) for peak performance in offline mode.
 
-## ⚠️ SYSTEM LIMITATIONS (The Cons)
-- **Analysis Latency**: Deep neural analysis and dynamic DOM fetching introduces a heavier 5-10 second overhead on searches.
-- **Entropy False Positives**: May flag unusually named but legitimate startups.
-- **Dependency on LLM API**: Requires an active Gemini key to provide natural language Context Reports.
+## 🚀 CORE PRODUCT FEATURES
+- **Intelligence Agent (v3.5)**: ReAct-based reasoning providing human-readable security briefings.
+- **Dual-Layer Real-Time Engine**: Combines high-speed ML classification with deep heuristic telemetry.
+- **Chrome/Edge Extension**: Instant one-click scanning directly from your browser.
+- **Explainable Security**: Full transparency on every threat verdict via SHAP-based feature analysis.
+
+## ⚠️ PERFORMANCE NOTES
+- **Analysis Overhead**: Deep neural analysis introduces a 2-5 second delay for high-risk targets.
+- **Network Dependency**: Live telemetry (WHOIS/SSL) requires an active internet connection.
+- **API Availability**: Advanced reasoning relies on Google Gemini API uptime (with local Llama fallback).
 
 ---
-*Updated for v3.2.7 Strategic Review.* 🛡️✨
+*Safe-Surf Product Audit | Hardened for 2026 Threat Landscape* 🛡️✨
