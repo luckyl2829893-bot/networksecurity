@@ -5,6 +5,7 @@ import whois
 import ssl
 import socket
 from datetime import datetime
+from dotenv import load_dotenv
 from networksecurity.utils.dynamic_scanner import run_dynamic_scan
 
 class PhishingAIAgent:
@@ -15,6 +16,8 @@ class PhishingAIAgent:
     
     def __init__(self, personality="CyberAnalyst"):
         self.personality = personality
+        # Load dotenv robustly
+        load_dotenv()
         self.gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
         if not self.gemini_key:
             xai_key = os.getenv("XAI_API_KEY", "").strip()
@@ -77,7 +80,7 @@ class PhishingAIAgent:
         if self.gemini_key:
             analysis = self._call_gemini_tier(prompt)
             if analysis:
-                return {"analysis": analysis, "model_used": "Gemini 2.5 Flash", "tier": 1}
+                return {"analysis": analysis, "model_used": "Gemini 1.5 Flash", "tier": 1}
 
         # Tier 2: Llama 3.1 8B (Local Ollama)
         analysis = self._call_ollama_tier("llama3.1:8b", prompt)
@@ -119,9 +122,9 @@ class PhishingAIAgent:
 
     def _call_gemini_tier(self, prompt):
         try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={self.gemini_key}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={self.gemini_key}"
             data = {"contents": [{"parts": [{"text": prompt}]}]}
-            res = requests.post(url, json=data, timeout=10)
+            res = requests.post(url, json=data, timeout=15)
             if res.status_code == 200:
                 return res.json()['candidates'][0]['content']['parts'][0]['text']
         except:
@@ -130,15 +133,20 @@ class PhishingAIAgent:
 
     def _call_ollama_tier(self, model_name, prompt):
         try:
-            data = {
-                "model": model_name,
-                "prompt": prompt,
-                "stream": False
-            }
-            # Reduced timeout from 30s to 2s so it fails fast if Ollama is offline
-            res = requests.post(self.ollama_url, json=data, timeout=2)
-            if res.status_code == 200:
-                return res.json().get("response")
+            # Fast tag health check (1s timeout)
+            res_tags = requests.get("http://localhost:11434/api/tags", timeout=1)
+            if res_tags.status_code == 200:
+                models = [m["name"] for m in res_tags.json().get("models", [])]
+                if any(model_name in m for m in models):
+                    data = {
+                        "model": model_name,
+                        "prompt": prompt,
+                        "stream": False
+                    }
+                    # Give the local model plenty of time to compute (30s)
+                    res = requests.post(self.ollama_url, json=data, timeout=30)
+                    if res.status_code == 200:
+                        return res.json().get("response")
         except:
             pass
         return None
