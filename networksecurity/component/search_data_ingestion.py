@@ -29,7 +29,15 @@ def ingest_data():
     """
     try:
         print(f"Connecting to MongoDB: {DATABASE_NAME}...")
-        client = pymongo.MongoClient(MONGO_DB_URL, tlsCAFile=ca)
+        client = pymongo.MongoClient(
+            MONGO_DB_URL,
+            tlsCAFile=ca,
+            serverSelectionTimeoutMS=5000,
+            connectTimeoutMS=5000,
+            socketTimeoutMS=5000
+        )
+        # Verify connection immediately to fail fast if offline
+        client.admin.command('ping')
         db = client[DATABASE_NAME]
         
         for collection_name, file_path in DATA_FILES.items():

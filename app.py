@@ -26,6 +26,7 @@ from networksecurity.utils.advanced_analysis import (
     check_subdomain_takeover
 )
 from networksecurity.utils.ai_agent import get_ai_agent_response
+from networksecurity.utils.whitelist_manager import whitelist_manager
 from networksecurity.utils.main_utils.utils import load_object
 
 import certifi
@@ -33,7 +34,15 @@ try:
     from pymongo import MongoClient
     mongo_db_url = os.getenv("MONGO_DB_URL")
     if mongo_db_url:
-        client = MongoClient(mongo_db_url, tlsCAFile=certifi.where())
+        client = MongoClient(
+            mongo_db_url,
+            tlsCAFile=certifi.where(),
+            serverSelectionTimeoutMS=2000,
+            connectTimeoutMS=2000,
+            socketTimeoutMS=2000
+        )
+        # Verify connection immediately to fail fast if offline
+        client.admin.command('ping')
         search_db = client["PhishingDetectionDB"]
     else:
         search_db = None
@@ -101,33 +110,39 @@ async def search_route(request: Request, query: str):
         heuristic_score = heuristic_data["score"]
         heuristic_reasons = heuristic_data["reasons"]
 
-        if input_type == "url":
-            form_analysis = analyze_form_targets(query)
-            if form_analysis["detected"]:
-                heuristic_score += 100
-                heuristic_reasons.extend(form_analysis["details"])
-        
         domain_str = query
         if input_type == "url":
             from urllib.parse import urlparse
             domain_str = urlparse(query).netloc
+
+        is_trusted = whitelist_manager.is_whitelisted(query) or whitelist_manager.is_whitelisted(domain_str)
+
+        if is_trusted:
+            total_risk_score = 0
+            heuristic_reasons.append("✅ Verified Domain (Tranco Top 100k)")
+        else:
+            if input_type == "url":
+                form_analysis = analyze_form_targets(query)
+                if form_analysis["detected"]:
+                    heuristic_score += 100
+                    heuristic_reasons.extend(form_analysis["details"])
             
-        whois_data = get_domain_age_risk(domain_str)
-        if whois_data["is_new"]:
-            heuristic_score += 50
-            heuristic_reasons.extend(whois_data["details"])
+            whois_data = get_domain_age_risk(domain_str)
+            if whois_data["is_new"]:
+                heuristic_score += 50
+                heuristic_reasons.extend(whois_data["details"])
+                
+            redirect_analysis = analyze_open_redirects(query)
+            if redirect_analysis["detected"]:
+                heuristic_score += 40
+                heuristic_reasons.extend(redirect_analysis["details"])
+                
+            subdomain_analysis = check_subdomain_takeover(domain_str)
+            if subdomain_analysis["detected"]:
+                heuristic_score += 70
+                heuristic_reasons.extend(subdomain_analysis["details"])
             
-        redirect_analysis = analyze_open_redirects(query)
-        if redirect_analysis["detected"]:
-            heuristic_score += 40
-            heuristic_reasons.extend(redirect_analysis["details"])
-            
-        subdomain_analysis = check_subdomain_takeover(domain_str)
-        if subdomain_analysis["detected"]:
-            heuristic_score += 70
-            heuristic_reasons.extend(subdomain_analysis["details"])
-        
-        total_risk_score = min(db_score + heuristic_score, 100)
+            total_risk_score = min(db_score + heuristic_score, 100)
         
         # AI Agent Report (Grok-style)
         security_brief = get_ai_agent_response(query, input_type, total_risk_score, heuristic_reasons, results)

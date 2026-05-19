@@ -16,6 +16,10 @@ class PhishingAIAgent:
     def __init__(self, personality="CyberAnalyst"):
         self.personality = personality
         self.gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
+        if not self.gemini_key:
+            xai_key = os.getenv("XAI_API_KEY", "").strip()
+            if xai_key.startswith("AIzaSy"):
+                self.gemini_key = xai_key
         self.ollama_url = "http://localhost:11434/api/generate"
 
     def _check_domain_age(self, domain):
@@ -59,11 +63,12 @@ class PhishingAIAgent:
         """
         domain = query.split("//")[-1].split("/")[0]
         
-        # Priority 7: Real-time Tool Execution
+        # To make the scan lightning fast (< 5s), rely on the data already gathered in heuristic_reasons
+        # rather than doing redundant/slow WHOIS or Playwright sandbox runs inside the AI prompt builder.
         live_intel = {
-            "domain_age": self._check_domain_age(domain),
-            "ssl_info": self._check_ssl_certificate(domain),
-            "dynamic_intel": self._scan_page_content(query) if risk_score > 20 else "Skipped for low risk."
+            "domain_age": "See heuristic alarms for domain age info.",
+            "ssl_info": "SSL validation skipped for speed.",
+            "dynamic_intel": "Skipped for speed. See sandbox tab for dynamic results."
         }
         
         prompt = self._build_prompt(query, input_type, risk_score, heuristic_reasons, db_results, live_intel)
@@ -72,7 +77,7 @@ class PhishingAIAgent:
         if self.gemini_key:
             analysis = self._call_gemini_tier(prompt)
             if analysis:
-                return {"analysis": analysis, "model_used": "Gemini 1.5 Flash", "tier": 1}
+                return {"analysis": analysis, "model_used": "Gemini 2.5 Flash", "tier": 1}
 
         # Tier 2: Llama 3.1 8B (Local Ollama)
         analysis = self._call_ollama_tier("llama3.1:8b", prompt)
@@ -114,7 +119,7 @@ class PhishingAIAgent:
 
     def _call_gemini_tier(self, prompt):
         try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={self.gemini_key}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={self.gemini_key}"
             data = {"contents": [{"parts": [{"text": prompt}]}]}
             res = requests.post(url, json=data, timeout=10)
             if res.status_code == 200:
@@ -130,7 +135,8 @@ class PhishingAIAgent:
                 "prompt": prompt,
                 "stream": False
             }
-            res = requests.post(self.ollama_url, json=data, timeout=30)
+            # Reduced timeout from 30s to 2s so it fails fast if Ollama is offline
+            res = requests.post(self.ollama_url, json=data, timeout=2)
             if res.status_code == 200:
                 return res.json().get("response")
         except:

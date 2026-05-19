@@ -19,4 +19,3 @@ altair<5   # for data visualization handles interactive buttons without writing 
 mlflow   # for experiment tracking and model management
 dagshub  # for DagsHub integration
 playwright # for dynamic headless browser sandboxing
-shap     # for model explainability (XAI)

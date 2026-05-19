@@ -1,0 +1,33 @@
+====================================================
+🛡️  NETWORK SECURITY PROJECT: COMPREHENSIVE TEST SUITE
+====================================================
+
+Testing 1. Homograph Attack (Punycode)...
+  > Input: xn--80ak6aa92e.com
+  > Result: ✅ PASSED (Detected)
+--------------------------------------------------
+Testing 2. Open Redirect (Section 1.C)...
+  > Input: https://example.com/login?next=http://malicious-site.xyz
+  > Result: ✅ PASSED (Detected)
+--------------------------------------------------
+Testing 3. Brand Impersonation (Subdomain spoof)...
+  > Input: secure-paypal-login.xyz
+  > Result: ✅ PASSED (Detected)
+--------------------------------------------------
+Testing 4. High-Risk TLD (.xyz)...
+  > Input: free-crypto-bonus.xyz
+  > Result: ✅ PASSED (Detected)
+--------------------------------------------------
+Testing 5. Suspicious Keywords...
+  > Input: update-your-banking-account-secure.com
+  > Result: ✅ PASSED (Detected)
+--------------------------------------------------
+
+--- Live Web Analysis Tests (Requires Internet) ---
+Testing Live URL: http://www.google.com (Legitimate Site (Should be low risk))
+  > Form/Iframe Analysis Detected: False
+--------------------------------------------------
+Testing Live URL: http://testing-ground.scrapethissite.com/ (Scraping Test Site)
+  > Form/Iframe Analysis Detected: False
+    - Web analysis error: HTTPConnectionPool(host='testing-ground.scrapethissite.com', port=80): Max retries exceeded with url: / (Caused by NameResolutionError("<urllib3.connection.HTTPConnection object at 0x000001F9882A1120>: Failed to resolve 'testing-ground.scrapethissite.com' ([Errno 11001] getaddrinfo failed)"))
+--------------------------------------------------

@@ -45,48 +45,48 @@ def perform_scan(query):
     heuristic_score = heuristic_data["score"]
     heuristic_reasons = heuristic_data["reasons"]
 
-    if input_type == "url":
-        form_analysis = analyze_form_targets(query)
-        if form_analysis["detected"]:
-            heuristic_score += 100
-            heuristic_reasons.extend(form_analysis["details"])
-    
     domain_str = query
     if input_type == "url":
         domain_str = urlparse(query).netloc
-        
-    whois_data = get_domain_age_risk(domain_str)
-    if whois_data["is_new"]:
-        heuristic_score += 50
-        heuristic_reasons.extend(whois_data["details"])
-        
-    redirect_analysis = analyze_open_redirects(query)
-    if redirect_analysis["detected"]:
-        heuristic_score += 40
-        heuristic_reasons.extend(redirect_analysis["details"])
-        
-    subdomain_analysis = check_subdomain_takeover(domain_str)
-    if subdomain_analysis["detected"]:
-        heuristic_score += 70
-        heuristic_reasons.extend(subdomain_analysis["details"])
-    
-    # Priority 6: Hindi Phishing Detection
-    hindi_results = hindi_detector.detect(query)
-    if hindi_results["detected"]:
-        heuristic_score += hindi_results["score_boost"]
-        heuristic_reasons.extend(hindi_results["reasons"])
-    
-    # Priority 4: Whitelist Adjustment
-    is_trusted = whitelist_manager.is_whitelisted(query)
-    
-    total_risk_score = heuristic_score
-    if is_trusted:
-        total_risk_score = int(total_risk_score * 0.2)
-        heuristic_reasons.append("✅ Verified Domain (Tranco Top 100k)")
 
-    # Priority 5: Dynamic Sandbox Scan
+    is_trusted = whitelist_manager.is_whitelisted(query) or whitelist_manager.is_whitelisted(domain_str)
+
+    if is_trusted:
+        total_risk_score = 0
+        heuristic_reasons.append("✅ Verified Domain (Tranco Top 100k)")
+    else:
+        if input_type == "url":
+            form_analysis = analyze_form_targets(query)
+            if form_analysis["detected"]:
+                heuristic_score += 100
+                heuristic_reasons.extend(form_analysis["details"])
+        
+        whois_data = get_domain_age_risk(domain_str)
+        if whois_data["is_new"]:
+            heuristic_score += 50
+            heuristic_reasons.extend(whois_data["details"])
+            
+        redirect_analysis = analyze_open_redirects(query)
+        if redirect_analysis["detected"]:
+            heuristic_score += 40
+            heuristic_reasons.extend(redirect_analysis["details"])
+            
+        subdomain_analysis = check_subdomain_takeover(domain_str)
+        if subdomain_analysis["detected"]:
+            heuristic_score += 70
+            heuristic_reasons.extend(subdomain_analysis["details"])
+        
+        # Priority 6: Hindi Phishing Detection
+        hindi_results = hindi_detector.detect(query)
+        if hindi_results["detected"]:
+            heuristic_score += hindi_results["score_boost"]
+            heuristic_reasons.extend(hindi_results["reasons"])
+        
+        total_risk_score = heuristic_score
+
+    # Priority 5: Dynamic Sandbox Scan (Disabled by default for speed)
     dynamic_results = None
-    if total_risk_score > 30:
+    if False: # total_risk_score > 30:
         with st.status("🚀 Launching Playwright Sandbox...", expanded=False):
             dynamic_results = run_dynamic_scan(query)
             if dynamic_results["status"] == "success":

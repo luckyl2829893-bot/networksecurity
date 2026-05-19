@@ -21,14 +21,7 @@ from urllib.parse import urlparse
 
 import dagshub
 
-# NOTE: Since you are setting the DagsHub URI in main.py, you can optionally remove 
-# these lines if they are redundant, but keeping them here ensures ModelTrainer can 
-# always log to DagsHub even if run independently.
-dagshub.init(repo_owner='luckyl2829893', repo_name='networksecurity', mlflow=True)
-os.environ["MLFLOW_TRACKING_URI"] = "https://dagshub.com/luckyl2829893/networksecurity.mlflow"
-os.environ["MLFLOW_TRACKING_USERNAME"] = "luckyl2829893"
-os.environ["MLFLOW_TRACKING_PASSWORD"] = "af648c8d94618f713b93b227b717b9bedaa6aabf"
-
+# dagshub init was moved inside ModelTrainer to avoid module-level execution.
 
 class ModelTrainer:
     def __init__(self, model_trainer_config: ModelTrainerConfig, data_transformation_artifact: DataTransformationArtifact):

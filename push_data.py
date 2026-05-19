@@ -39,7 +39,15 @@ class NetworkDataExtract():
             self.records=records
 
             import certifi
-            self.mongo_client=pymongo.MongoClient(MONGO_DB_URL, tlsCAFile=certifi.where())
+            self.mongo_client=pymongo.MongoClient(
+                MONGO_DB_URL,
+                tlsCAFile=certifi.where(),
+                serverSelectionTimeoutMS=5000,
+                connectTimeoutMS=5000,
+                socketTimeoutMS=5000
+            )
+            # Verify connection immediately to fail fast if offline
+            self.mongo_client.admin.command('ping')
             self.database = self.mongo_client[self.database]
             
             self.collection=self.database[self.collection]
