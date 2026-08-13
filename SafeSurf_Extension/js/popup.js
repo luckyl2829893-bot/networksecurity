@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const loadingOverlay = document.getElementById('loading-overlay');
+    const loadingTimer = document.getElementById('loading-timer');
     const targetUrlElem = document.getElementById('target-url');
     const riskScoreElem = document.getElementById('risk-score');
     const statusBadge = document.getElementById('status-badge');
@@ -9,6 +10,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const heuristicContainer = document.getElementById('heuristic-reasons');
 
     const API_URL = 'http://localhost:8000/api/v1/analyze';
+    let timerInterval = null;
 
     async function analyzeCurrentTab() {
         showLoading(true);
@@ -23,12 +25,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             const url = tab.url;
             targetUrlElem.textContent = url;
 
-            // Call Safe-Surf API
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: url })
-            });
+            // Call Safe-Surf API with a 90-second timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 90000);
+
+            let response;
+            try {
+                response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: url }),
+                    signal: controller.signal
+                });
+            } finally {
+                clearTimeout(timeoutId);
+            }
 
             const result = await response.json();
 
@@ -39,7 +50,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         } catch (error) {
             console.error('Analysis Error:', error);
-            showError('Server Unreachable. Ensure FastAPI is running on port 8000.');
+            if (error.name === 'AbortError') {
+                showError('Scan timed out (>90s). Server is running but taking too long.');
+            } else {
+                showError('Server Unreachable. Make sure FastAPI is running on port 8000.');
+            }
         } finally {
             showLoading(false);
         }
@@ -48,7 +63,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function updateUI(data) {
         const score = data.risk_score;
         riskScoreElem.textContent = score;
-        
+
         // Color coding
         if (score < 30) {
             riskScoreElem.style.color = 'var(--accent-success)';
@@ -70,8 +85,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Heuristics
         if (data.heuristic_reasons && data.heuristic_reasons.length > 0) {
             heuristicContainer.style.display = 'block';
-            anomaliesList.innerHTML = data.heuristic_reasons.map(reason => 
-                `<div style="margin-bottom: 5px;">• ${reason}</div>`
+            anomaliesList.innerHTML = data.heuristic_reasons.map(reason =>
+                `<div style="margin-bottom: 5px;">&#x2022; ${reason}</div>`
             ).join('');
         } else {
             heuristicContainer.style.display = 'none';
@@ -87,9 +102,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     function showLoading(isLoading) {
         loadingOverlay.style.opacity = isLoading ? '1' : '0';
         loadingOverlay.style.pointerEvents = isLoading ? 'all' : 'none';
+
         if (isLoading) {
             statusBadge.className = 'status-badge loading';
             statusBadge.textContent = 'Scanning...';
+
+            // Start elapsed timer
+            const startTime = Date.now();
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                loadingTimer.textContent = `${elapsed}s elapsed — Deep scan in progress`;
+            }, 1000);
+        } else {
+            // Stop timer
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
         }
     }
 
@@ -101,7 +130,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     rescanBtn.addEventListener('click', analyzeCurrentTab);
-    
+
     // Initial Analysis
     analyzeCurrentTab();
 });

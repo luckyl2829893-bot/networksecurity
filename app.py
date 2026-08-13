@@ -145,13 +145,14 @@ async def search_route(request: Request, query: str):
             total_risk_score = min(db_score + heuristic_score, 100)
         
         # AI Agent Report (Grok-style)
-        security_brief = get_ai_agent_response(query, input_type, total_risk_score, heuristic_reasons, results)
+        ai_result = get_ai_agent_response(query, input_type, total_risk_score, heuristic_reasons, results)
+        security_brief = ai_result.get("analysis", str(ai_result)) if isinstance(ai_result, dict) else str(ai_result)
         
         # UI Confidence Level
         confidence = 100 - (total_risk_score // 5) if total_risk_score < 50 else 95
         
         # Check if real LLM is active
-        llm_mode = bool(os.getenv("XAI_API_KEY") or os.getenv("GROK_API_KEY"))
+        llm_mode = bool(os.getenv("GEMINI_API_KEY"))
         
         return templates.TemplateResponse("index.html", {
             "request": request, 
@@ -231,7 +232,8 @@ async def analyze_api(request: Request):
         total_risk_score = min(db_score + heuristic_score, 100)
         
         # AI Agent Report
-        security_brief = get_ai_agent_response(query, input_type, total_risk_score, heuristic_reasons, results)
+        ai_result = get_ai_agent_response(query, input_type, total_risk_score, heuristic_reasons, results)
+        security_brief = ai_result.get("analysis", str(ai_result)) if isinstance(ai_result, dict) else str(ai_result)
         
         # UI Confidence Level
         confidence = 100 - (total_risk_score // 5) if total_risk_score < 50 else 95

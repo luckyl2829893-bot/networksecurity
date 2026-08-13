@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Safe-Surf | Extension</title>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <!-- Lucide Icons -->
-    <script src="js/lucide.min.js"></script>
     <style>
         :root {
             --bg-color: #0d1117;
@@ -135,6 +133,7 @@
             cursor: pointer;
             transition: all 0.2s ease;
             margin-top: 0.5rem;
+            font-size: 0.95rem;
         }
 
         .btn-action:hover {
@@ -175,6 +174,7 @@
     <div id="loading-overlay">
         <div class="spinner"></div>
         <p class="risk-label" style="color: var(--accent-primary);">Analyzing Neural Link...</p>
+        <p id="loading-timer" style="color: var(--text-muted); font-size: 0.7rem; margin-top: 4px;">0s elapsed — Deep scan in progress</p>
     </div>
 
     <header>
@@ -205,8 +205,7 @@
         </div>
 
         <button id="rescan-btn" class="btn-action">
-            <i data-lucide="refresh-cw" style="width: 14px; margin-right: 5px;"></i>
-            Force Re-Scan
+            &#x21BB; Force Re-Scan
         </button>
     </div>
 

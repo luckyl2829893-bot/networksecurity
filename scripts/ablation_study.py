@@ -62,31 +62,32 @@ def evaluate_url(args):
         "label": label
     }
 
-def run_ablation_study():
+def run_ablation_study(sample_size):
     global model
-    print("[IEEE] Starting 5-Fold Cross-Validation Ablation Study (2000 URLs)...")
+    total_urls = sample_size * 2
+    print(f"[IEEE] Starting 5-Fold Cross-Validation Ablation Study ({total_urls} URLs)...")
     
     try:
         model = load_object("final_model/model.pkl")
     except Exception as e:
-        print("X Error loading ML model: {e}")
+        print(f"X Error loading ML model: {e}")
         return
 
-    # Load 2000 URLs (1000 Phishing + 1000 Safe) - Randomized for verification
-    print("Loading Random Sample of 2000 URLs...")
+    # Load URLs (sample_size Phishing + sample_size Safe) - Randomized for verification
+    print(f"Loading Random Sample of {total_urls} URLs ({sample_size} Phishing + {sample_size} Safe)...")
     try:
         df_phish_full = pd.read_csv("Network_data/verified_online.csv")
-        df_phish = df_phish_full.sample(n=1000)
+        df_phish = df_phish_full.sample(n=sample_size)
         urls_phish = df_phish['url'].tolist()
         
         df_safe_full = pd.read_csv("Network_data/top-1m.csv", header=None)
-        df_safe = df_safe_full.sample(n=1000)
+        df_safe = df_safe_full.sample(n=sample_size)
         urls_safe = ["http://" + str(d) for d in df_safe[1].tolist()]
     except Exception as e:
         print(f"Error sampling datasets: {e}. Falling back to default slice.")
-        df_phish = pd.read_csv("Network_data/verified_online.csv").head(1000)
+        df_phish = pd.read_csv("Network_data/verified_online.csv").head(sample_size)
         urls_phish = df_phish['url'].tolist()
-        df_safe = pd.read_csv("Network_data/top-1m.csv", header=None).head(1000)
+        df_safe = pd.read_csv("Network_data/top-1m.csv", header=None).head(sample_size)
         urls_safe = ["http://" + str(d) for d in df_safe[1].tolist()]
     
     tasks = [(u, 1) for u in urls_phish] + [(u, 0) for u in urls_safe]
@@ -105,7 +106,7 @@ def run_ablation_study():
     layers = ["ml", "heur", "combined", "agent"]
     layer_names = ["Layer 1: ML Only", "Layer 2: Heuristics Only", "Layer 3: Combined (Hybrid)", "Layer 4: AI Agent (ReAct)"]
     
-    cv_metrics = {l: {"acc": [], "prec": [], "rec": [], "f1": []} for l in layers}
+    cv_metrics = {l: {"acc": [], "prec": [], "rec": [], "f1": [], "fpr": []} for l in layers}
     
     for train_index, test_index in kf.split(df):
         test_fold = df.iloc[test_index]
@@ -117,22 +118,36 @@ def run_ablation_study():
             cv_metrics[l]["prec"].append(precision_score(y_true, y_pred, zero_division=0))
             cv_metrics[l]["rec"].append(recall_score(y_true, y_pred, zero_division=0))
             cv_metrics[l]["f1"].append(f1_score(y_true, y_pred, zero_division=0))
+            
+            # FPR = FP / (FP + TN)
+            fp = ((y_true == 0) & (y_pred == 1)).sum()
+            tn = ((y_true == 0) & (y_pred == 0)).sum()
+            fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
+            cv_metrics[l]["fpr"].append(fpr)
 
     # --- REPORTING ---
-    print("\n" + "="*80)
-    print(f"{'ABLATION LAYER':<30} | {'ACCURACY':<12} | {'PRECISION':<12} | {'F1-SCORE':<12}")
-    print("-" * 80)
+    print("\n" + "="*115)
+    print(f"REPORT FOR SAMPLE SIZE: {sample_size} EACH ({total_urls} TOTAL URLs)")
+    print("="*115)
+    print(f"{'ABLATION LAYER':<30} | {'ACCURACY':<15} | {'PRECISION':<15} | {'RECALL':<15} | {'F1-SCORE':<15} | {'FPR (on Tranco)':<15}")
+    print("-" * 115)
     
     for i, l in enumerate(layers):
         m = cv_metrics[l]
         acc_str = f"{np.mean(m['acc']):.4f} ± {np.std(m['acc']):.4f}"
         prec_str = f"{np.mean(m['prec']):.4f} ± {np.std(m['prec']):.4f}"
+        rec_str = f"{np.mean(m['rec']):.4f} ± {np.std(m['rec']):.4f}"
         f1_str = f"{np.mean(m['f1']):.4f} ± {np.std(m['f1']):.4f}"
+        fpr_str = f"{np.mean(m['fpr']):.4%}"
         
-        print(f"{layer_names[i]:<30} | {acc_str:<12} | {prec_str:<12} | {f1_str:<12}")
+        print(f"{layer_names[i]:<30} | {acc_str:<15} | {prec_str:<15} | {rec_str:<15} | {f1_str:<15} | {fpr_str:<15}")
 
-    print("="*80)
-    print("✅ Ablation Study Complete. Metrics ready for IEEE table.")
+    print("="*115)
+    print(f"[SUCCESS] Ablation Study Complete for size {sample_size} each.")
 
 if __name__ == "__main__":
-    run_ablation_study()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--size', type=int, default=1000, help='Sample size of each class')
+    args = parser.parse_args()
+    run_ablation_study(args.size)

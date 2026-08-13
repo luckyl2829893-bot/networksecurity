@@ -18,11 +18,8 @@ class PhishingAIAgent:
         self.personality = personality
         # Load dotenv robustly
         load_dotenv()
+        # GEMINI_API_KEY is the canonical key name (previously mis-labelled XAI_API_KEY)
         self.gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
-        if not self.gemini_key:
-            xai_key = os.getenv("XAI_API_KEY", "").strip()
-            if xai_key.startswith("AIzaSy"):
-                self.gemini_key = xai_key
         self.ollama_url = "http://localhost:11434/api/generate"
 
     def _check_domain_age(self, domain):

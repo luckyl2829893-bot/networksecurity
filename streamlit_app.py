@@ -204,13 +204,14 @@ if st.session_state.scan_results:
         st.write("### AI Model Explainability (SHAP)")
         st.info("These plots explain exactly how the Machine Learning model reached its conclusion based on the extracted features.")
         
-        summary_path = os.path.join("Artifacts", "Explainability", "shap_summary_plot.png")
+        _base = os.path.dirname(os.path.abspath(__file__))
+        summary_path = os.path.join(_base, "Artifacts", "Explainability", "shap_summary_plot.png")
         if os.path.exists(summary_path):
             st.image(summary_path, caption="Global Feature Importance (SHAP Summary)")
         else:
             st.warning("SHAP Summary Plot not found. Please trigger a model retrain.")
             
-        waterfall_path = os.path.join("Artifacts", "Explainability", "shap_waterfall_plot.png")
+        waterfall_path = os.path.join(_base, "Artifacts", "Explainability", "shap_waterfall_plot.png")
         if os.path.exists(waterfall_path):
             st.image(waterfall_path, caption="Local Instance Analysis (SHAP Waterfall)")
 
